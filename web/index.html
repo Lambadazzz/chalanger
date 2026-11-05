@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eee6ff">
+  <meta name="description" content="Личный альбом идей для рисования">
+  <title>Chalanger — альбом идей</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body data-paper="lilac" data-pattern="dots">
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="spark" viewBox="0 0 24 24"><path d="M12 2c.8 6.5 3.5 9.2 10 10-6.5.8-9.2 3.5-10 10C11.2 15.5 8.5 12.8 2 12 8.5 11.2 11.2 8.5 12 2Z"/></symbol>
+    <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="palette-icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1 1 0 0 1 .7-1.6H17a4 4 0 0 0 4-4 9 9 0 0 0-9-9Z"/><path d="M7 12h.01M9 7h.01M14 7h.01M17 10h.01" stroke-width="3"/></symbol>
+    <symbol id="dots" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.3"/></symbol>
+    <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v6m4-6v6"/></symbol>
+    <symbol id="back" viewBox="0 0 24 24"><path d="m9 5-5 5 5 5M4 10h11a5 5 0 0 1 0 10h-3"/></symbol>
+  </svg>
+  <main class="album">
+    <header class="cover">
+      <div class="cover-copy">
+        <div class="eyebrow"><span>✦</span> ЛИЧНЫЙ АЛЬБОМ</div>
+        <h1>Chalanger<span>.</span></h1>
+        <p>Что хочется порисовать?</p>
+      </div>
+      <svg class="cover-art" viewBox="0 0 170 135" aria-hidden="true">
+        <path d="M55 25c7-9 22-10 30 0l7 10 10-7c12-8 24-4 30 7 4 7 2 14-1 20l-9 12 13 5c12 5 15 20 6 29-6 7-14 7-21 5l-14-5-1 12c-2 13-17 19-27 11-5-4-7-9-8-15l-1-13-13 4c-11 4-22-3-23-14-1-8 3-14 10-19l12-7-5-10c-5-9-2-18 5-25Z" fill="#ff85c8" stroke="#23173b" stroke-width="3"/>
+        <path d="M69 64c2-9 10-11 14-3m10-3c2-9 9-12 14-4m-19 17c5 9 16 6 18-4" fill="none" stroke="#23173b" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M23 15c2 12 6 16 18 17-12 2-16 6-18 18-2-12-6-16-18-18 12-1 16-5 18-17Z" fill="#e7ff72" stroke="#23173b" stroke-width="2.5"/>
+        <path d="M146 8c1 10 4 13 14 14-10 1-13 4-14 14-1-10-4-13-14-14 10-1 13-4 14-14Z" fill="#ffda69" stroke="#23173b" stroke-width="2.5"/>
+        <path d="m20 90 9 5m-15 7 11 2m128-42 9-5m-7 15 11-3" stroke="#23173b" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </header>
+    <nav class="toolbar" aria-label="Разделы альбома">
+      <div class="tabs">
+        <button type="button" class="tab" data-view="ideas" aria-pressed="true"><svg><use href="#spark"/></svg> Идеи <span id="ideas-count">0</span></button>
+        <button type="button" class="tab" data-view="done" aria-pressed="false"><svg><use href="#folder"/></svg> Готово <span id="done-count">0</span></button>
+      </div>
+      <button type="button" class="palette-button" id="palette" aria-label="Палитра" title="Палитра"><svg><use href="#palette-icon"/></svg></button>
+    </nav>
+    <section id="update" class="update" hidden><span>Доступна новая версия</span><button type="button" id="apply-update">Обновить</button></section>
+    <section class="board" aria-label="Карточки альбома">
+      <div class="board-label"><span id="board-title">НАБРОСКИ</span><span id="board-hint">Зажми карточку, чтобы переместить</span></div>
+      <div id="cards" class="cards"></div>
+      <div id="empty" class="empty" hidden></div>
+    </section>
+    <div class="footer"><button type="button" id="add" class="add-button" disabled><svg><use href="#plus"/></svg> Новая идея</button></div>
+  </main>
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="editor-form">
+      <div class="dialog-head"><h2 id="editor-title">Новая идея</h2><button class="icon-button" type="button" data-close aria-label="Закрыть"><svg><use href="#close"/></svg></button></div>
+      <label class="field">Что рисуем?<textarea name="idea" rows="3" maxlength="240" required placeholder="Например, луна из клубничного желе"></textarea></label>
+      <fieldset id="card-style"></fieldset>
+      <div class="dialog-actions"><button type="button" class="delete-action" id="delete-card" hidden>Удалить</button><button type="submit" class="primary">Сохранить</button></div>
+    </form>
+  </dialog>
+  <dialog id="appearance" aria-labelledby="appearance-title">
+    <form id="appearance-form">
+      <div class="dialog-head"><h2 id="appearance-title">Палитра</h2><button class="icon-button" type="button" data-close aria-label="Закрыть"><svg><use href="#close"/></svg></button></div>
+      <fieldset id="paper-style"></fieldset>
+      <fieldset id="default-style"></fieldset>
+      <div class="dialog-actions"><button type="submit" class="primary">Применить</button></div>
+    </form>
+    <section class="backup">
+      <h3>Резервная копия</h3>
+      <div><button id="export" type="button">Сохранить копию</button><button id="import" type="button">Восстановить из файла</button></div>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+    </section>
+  </dialog>
+  <div id="toast" class="toast" hidden><span role="status"></span><button type="button" hidden>Отменить</button></div>
+  <div id="confetti" aria-hidden="true"></div>
+</body>
+</html>
