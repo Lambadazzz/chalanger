@@ -1,6 +1,7 @@
 import { colors, patterns, decodeBackup, reorder, toggleCard, openAlbum, loadAlbum, saveAlbum } from './album.js';
 import { bindGestures } from './gestures.js';
 import { setupGenerator } from './generator.js';
+import { animate, bindButtonMotion, bounce, cardPositions, flyTo, playGhost, reducedMotion, slideCards, snapshot } from './motion.js';
 
 const get = selector => document.querySelector(selector);
 const list = get('#cards');
@@ -12,7 +13,7 @@ const toast = get('#toast');
 const undoButton = toast.querySelector('button');
 const textarea = editorForm.elements.idea;
 const generator = setupGenerator(editor, textarea);
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+bindButtonMotion();
 const suggestions = ['Луна из клубничного желе', 'Кот в цветочном киоске', 'Медуза в кедах'];
 let album;
 let db;
@@ -22,7 +23,6 @@ let revealed;
 let undo;
 let toastTimer;
 let saving = false;
-let celebrating = false;
 
 function icon(name) {
   return '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
@@ -61,26 +61,46 @@ function makeCard(card, index) {
   return row;
 }
 
-function render() {
+function updateCount(id, count) {
+  const counter = get(id);
+  if (counter.textContent === String(count)) return;
+  counter.textContent = count;
+  animate(counter, [{ scale: '.82' }, { scale: '1.27', offset: .55 }, { scale: 'none' }],
+    { duration: 275, easing: 'ease-out' });
+}
+
+function render({ enterId, all = false, slide = false } = {}) {
+  cancelGesture();
+  const positions = slide && !reducedMotion.matches ? cardPositions(list) : null;
   revealed = undefined;
   const done = view === 'done';
   const active = album.cards.filter(card => card.done === done);
   const doneCount = album.cards.filter(card => card.done).length;
   document.body.dataset.paper = album.paper.color;
   document.body.dataset.pattern = album.paper.pattern;
-  get('#ideas-count').textContent = album.cards.length - doneCount;
-  get('#done-count').textContent = doneCount;
+  updateCount('#ideas-count', album.cards.length - doneCount);
+  updateCount('#done-count', doneCount);
   get('#board-title').textContent = done ? 'ПАПКА ГОТОВОГО' : 'НАБРОСКИ';
   get('#board-hint').hidden = active.length < 2;
   document.querySelectorAll('[data-view]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.view === view));
   });
   list.replaceChildren(...active.map(makeCard));
+  if (positions) slideCards(list, positions);
+  let entrance = 0;
+  if (!reducedMotion.matches && (all || enterId)) {
+    for (const row of list.children) {
+      if (row.dataset.id === enterId || (all && row.getBoundingClientRect().top < innerHeight + 80)) {
+        bounce(row, Math.min(entrance++, 5) * 32);
+      }
+    }
+  }
   empty.hidden = active.length > 0;
   if (empty.hidden) return;
   empty.innerHTML = done
     ? '<div class="empty-sticker" aria-hidden="true">✓</div><h2>Здесь будет готовое</h2><p>Поставь галочку рядом с идеей, и она переедет в эту папку.</p>'
     : '<div class="empty-sticker" aria-hidden="true">✿</div><h2>Чистый лист!</h2><p>Запиши свою идею или начни с одной из этих подсказок.</p><div class="suggestions"></div>';
+  if (all || slide) bounce(empty);
   if (!done) {
     for (const suggestion of suggestions) {
       const button = document.createElement('button');
@@ -104,14 +124,14 @@ function notify(message, undoAction) {
   }, undo ? 6500 : 3500);
 }
 
-async function commit(next, afterSave) {
+async function commit(next, { onSaved, enterId, slide = false, keepRows = false } = {}) {
   if (saving || !db) return false;
   saving = true;
   try {
     await saveAlbum(db, next);
     album = next;
-    afterSave?.();
-    render();
+    onSaved?.();
+    if (!keepRows) render({ enterId, slide });
     return true;
   } catch {
     const message = 'Не удалось сохранить изменения. Попробуй ещё раз.';
@@ -124,9 +144,9 @@ async function commit(next, afterSave) {
 }
 
 function setView(next) {
-  if (!album || saving || celebrating || next === view) return;
+  if (!album || saving || next === view) return;
   view = next;
-  render();
+  render({ all: true });
 }
 
 function buildStyle(id, title, initial, inherited) {
@@ -150,8 +170,13 @@ function buildStyle(id, title, initial, inherited) {
     else preview.dataset.color = style.color;
     preview.dataset.pattern = style.pattern;
   }
-  color.addEventListener('change', updatePreview);
-  pattern.addEventListener('change', updatePreview);
+  function showPreview() {
+    updatePreview();
+    animate(preview, [{ scale: '.95', opacity: .6 }, { scale: 'none', opacity: 1 }],
+      { duration: 200, easing: 'ease-out' });
+  }
+  color.addEventListener('change', showPreview);
+  pattern.addEventListener('change', showPreview);
   updatePreview();
 }
 
@@ -162,7 +187,7 @@ function readStyle(id) {
 }
 
 function openEditor(card, suggestion = '') {
-  if (!album || saving || celebrating) return;
+  if (!album || saving) return;
   editingId = card?.id;
   get('#editor-title').textContent = card ? 'Редактировать идею' : 'Новая идея';
   get('#delete-card').hidden = !card;
@@ -177,26 +202,35 @@ function openEditor(card, suggestion = '') {
 function reveal(row, opened) {
   if (revealed && revealed !== row) reveal(revealed, false);
   row.style.setProperty('--swipe', opened ? '-66px' : '0px');
+  row.style.setProperty('--swipe-tilt', opened ? '-1deg' : '0deg');
   row.querySelector('.card-trash').hidden = !opened;
   revealed = opened ? row : undefined;
 }
 
 async function removeCard(id) {
-  if (saving || celebrating) return;
+  if (saving) return;
   const index = album.cards.findIndex(card => card.id === id);
   if (index < 0) return;
   const card = album.cards[index];
-  if (await commit({ ...album, cards: album.cards.filter(item => item.id !== id) },
-    () => { if (editor.open) editor.close(); })) {
+  const face = [...list.children].find(row => row.dataset.id === id)?.querySelector('.card-face');
+  const ghost = snapshot(face);
+  if (await commit({ ...album, cards: album.cards.filter(item => item.id !== id) }, {
+    onSaved: () => { if (editor.open) editor.close(); },
+    slide: true
+  })) {
+    playGhost(ghost, [
+      { transform: 'none', opacity: 1 },
+      { transform: 'translateX(-' + Math.min(380, innerWidth * .8) + 'px) rotate(-9deg) scale(.9)', opacity: 0 }
+    ], { duration: 260, easing: 'cubic-bezier(.26,.14,.62,1)', fill: 'both' });
     notify('Карточка удалена', () => {
       const cards = [...album.cards];
       cards.splice(index, 0, card);
-      return commit({ ...album, cards });
+      return commit({ ...album, cards }, { enterId: id, slide: true });
     });
-  }
+  } else render();
 }
 
-function scatter(button, card) {
+function scatter(button) {
   if (reducedMotion.matches) return;
   const host = get('#confetti');
   const { x, y, width, height } = button.getBoundingClientRect();
@@ -221,23 +255,34 @@ function scatter(button, card) {
 }
 
 async function markCard(card, row, button) {
-  if (celebrating || saving) return;
+  if (saving) return;
   if (!card.done && !reducedMotion.matches) {
-    celebrating = true;
     button.innerHTML = '<span>' + icon('check') + '</span>';
-    row.classList.add('celebrating');
-    scatter(button, card);
-    await new Promise(resolve => setTimeout(resolve, 285));
+    scatter(button);
   }
-  const saved = await commit({ ...album, cards: toggleCard(album.cards, card.id) });
-  celebrating = false;
-  if (saved) notify(card.done ? 'Снова в идеях' : 'В папке «Готово» ✦');
-  else render();
+  const ghost = snapshot(row.querySelector('.card-face'));
+  if (!await commit({ ...album, cards: toggleCard(album.cards, card.id) }, { slide: true })) {
+    render();
+    return;
+  }
+  const tab = get(card.done ? '[data-view="ideas"]' : '[data-view="done"]');
+  const box = tab.getBoundingClientRect();
+  if (box.bottom > 0 && box.top < innerHeight) flyTo(ghost, tab);
+  else playGhost(ghost, [
+    { transform: 'none', opacity: 1 },
+    { transform: 'translateY(-10px) scale(.91) rotate(-3deg)', opacity: 0 }
+  ], { duration: 220, easing: 'ease-in', fill: 'both' });
+  if (!card.done && !reducedMotion.matches) {
+    tab.classList.remove('receiving');
+    void tab.offsetWidth;
+    tab.classList.add('receiving');
+  }
+  notify(card.done ? 'Снова в идеях' : 'В папке «Готово» ✦');
 }
 
-function saveOrder(ids) {
+function saveOrder(ids, keepRows = false) {
   const cards = reorder(album.cards, view === 'done', ids);
-  return commit({ ...album, cards }).then(saved => {
+  return commit({ ...album, cards }, { keepRows, slide: !keepRows }).then(saved => {
     if (!saved) render();
     return saved;
   });
@@ -251,7 +296,7 @@ document.querySelectorAll('[data-close]').forEach(button => {
   button.addEventListener('click', () => button.closest('dialog').close());
 });
 get('#palette').addEventListener('click', () => {
-  if (!album || saving || celebrating) return;
+  if (!album || saving) return;
   buildStyle('paper-style', 'Фон альбома', album.paper);
   buildStyle('default-style', 'Фон карточек по умолчанию', album.cardStyle);
   appearance.showModal();
@@ -259,7 +304,7 @@ get('#palette').addEventListener('click', () => {
 get('#appearance-form').addEventListener('submit', event => {
   event.preventDefault();
   void commit({ ...album, paper: readStyle('paper-style'), cardStyle: readStyle('default-style') },
-    () => appearance.close());
+    { onSaved: () => appearance.close() });
 });
 textarea.addEventListener('input', () => textarea.setCustomValidity(''));
 editorForm.addEventListener('submit', event => {
@@ -272,24 +317,28 @@ editorForm.addEventListener('submit', event => {
     return;
   }
   const style = readStyle('card-style');
+  const id = editingId ?? crypto.randomUUID();
   const cards = editingId
     ? album.cards.map(card => card.id === editingId ? { ...card, text, style } : card)
-    : [{ id: crypto.randomUUID(), text, style, done: false }, ...album.cards];
-  void commit({ ...album, cards }, () => {
-    if (!editingId) view = 'ideas';
-    editor.close();
+    : [{ id, text, style, done: false }, ...album.cards];
+  void commit({ ...album, cards }, {
+    onSaved: () => {
+      if (!editingId) view = 'ideas';
+      editor.close();
+    },
+    enterId: id, slide: !editingId
   });
 });
 get('#delete-card').addEventListener('click', () => void removeCard(editingId));
 undoButton.addEventListener('click', async () => {
-  if (saving || celebrating || !undo) return;
+  if (saving || !undo) return;
   if (await undo()) notify('Карточка возвращена');
 });
 
 list.addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
   const row = event.target.closest('.card');
-  if (!row || saving || celebrating) return;
+  if (!row || saving) return;
   if (!button) {
     if (revealed) reveal(revealed, false);
     return;
@@ -301,7 +350,7 @@ list.addEventListener('click', event => {
   if (button.dataset.action === 'delete') void removeCard(card.id);
 });
 list.addEventListener('keydown', async event => {
-  if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key) || saving || celebrating) return;
+  if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key) || saving) return;
   const row = event.target.closest('.card');
   if (!row) return;
   event.preventDefault();
@@ -313,13 +362,13 @@ list.addEventListener('keydown', async event => {
   if (await saveOrder(ids)) list.children[to].querySelector('.card-check').focus();
 });
 
-bindGestures(list, {
-  allowed: () => !!album && !saving && !celebrating,
+const cancelGesture = bindGestures(list, {
+  allowed: () => !!album && !saving,
   isOpen: row => revealed === row,
   closeOthers: row => { if (revealed && revealed !== row) reveal(revealed, false); },
   reveal,
-  remove: row => { reveal(row, false); void removeCard(row.dataset.id); },
-  reorder: ids => { void saveOrder(ids); }
+  remove: row => { void removeCard(row.dataset.id); },
+  reorder: ids => { void saveOrder(ids, true); }
 });
 
 get('#export').addEventListener('click', () => {
@@ -344,7 +393,7 @@ backup.addEventListener('change', async () => {
     return;
   }
   if (!confirm('Восстановить копию? Она заменит текущие карточки и оформление.')) return;
-  if (await commit(next, () => appearance.close())) notify('Альбом восстановлен');
+  if (await commit(next, { onSaved: () => appearance.close() })) notify('Альбом восстановлен');
 });
 
 async function setupOffline() {
@@ -353,7 +402,7 @@ async function setupOffline() {
   const showUpdate = () => { get('#update').hidden = !registration.waiting; };
   let reloading = false;
   get('#apply-update').addEventListener('click', () => {
-    if (saving || celebrating || !registration.waiting) return;
+    if (saving || !registration.waiting) return;
     reloading = true;
     registration.waiting.postMessage('activate-update');
   });
@@ -373,7 +422,7 @@ try {
   db = await openAlbum();
   album = await loadAlbum(db);
   get('#add').disabled = false;
-  render();
+  render({ all: true });
 } catch {
   notify('Локальное хранилище недоступно. Открой альбом в обычной вкладке браузера.');
 }

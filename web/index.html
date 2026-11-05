@@ -11,6 +11,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="generator.css">
+  <link rel="stylesheet" href="motion.css">
   <script type="module" src="app.js"></script>
 </head>
 <body data-paper="lilac" data-pattern="dots">
@@ -18,7 +19,6 @@
     <symbol id="spark" viewBox="0 0 24 24"><path d="M12 2c.8 6.5 3.5 9.2 10 10-6.5.8-9.2 3.5-10 10C11.2 15.5 8.5 12.8 2 12 8.5 11.2 11.2 8.5 12 2Z"/></symbol>
     <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
-    <symbol id="folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
     <symbol id="palette-icon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1 1 0 0 1 .7-1.6H17a4 4 0 0 0 4-4 9 9 0 0 0-9-9Z"/><path d="M7 12h.01M9 7h.01M14 7h.01M17 10h.01" stroke-width="3"/></symbol>
     <symbol id="dots" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.3"/></symbol>
     <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
@@ -46,7 +46,7 @@
     <nav class="toolbar" aria-label="Разделы альбома">
       <div class="tabs">
         <button type="button" class="tab" data-view="ideas" aria-pressed="true"><svg><use href="#spark"/></svg> Идеи <span id="ideas-count">0</span></button>
-        <button type="button" class="tab" data-view="done" aria-pressed="false"><svg><use href="#folder"/></svg> Готово <span id="done-count">0</span></button>
+        <button type="button" class="tab" data-view="done" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 16V7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v5"/><path class="folder-flap" d="M3 12h18v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Готово <span id="done-count">0</span></button>
       </div>
       <button type="button" class="palette-button" id="palette" aria-label="Палитра" title="Палитра"><svg><use href="#palette-icon"/></svg></button>
     </nav>
@@ -91,6 +91,7 @@
           <div class="reels" id="idea-reels"></div>
           <button type="button" class="spin" id="spin-idea"><svg aria-hidden="true"><use href="#shuffle"/></svg> Крутить!</button>
         </div>
+        <div class="ticket-slot" aria-hidden="true"></div>
         <div class="idea-ticket">
           <div class="ticket-label"><span>✷ БИЛЕТИК НА РИСУНОК</span><span aria-hidden="true">✦ ✦ ✦</span></div>
           <p id="idea-ticket" aria-live="polite"></p>

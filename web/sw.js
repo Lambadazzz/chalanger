@@ -3,6 +3,7 @@ const cacheName = prefix + '__CHALANGER_BUILD__';
 const assets = [
   './', './index.html', './style.css', './app.js', './album.js', './gestures.js',
   './generator.css', './generator.js', './idea-bank.js',
+  './motion.css', './motion.js',
   './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'
 ];
 const cachedUrls = new Set(assets.map(path => new URL(path, self.registration.scope).href));

@@ -1,0 +1,103 @@
+:root { --paper-spring: cubic-bezier(.18,.8,.25,1.15); }
+body { transition: background-color .24s ease; }
+button { transition: scale .15s var(--paper-spring), box-shadow .15s ease, background-color .15s ease; }
+button:active:not(:disabled) { scale: .94; }
+.cover { animation: cover-open .36s var(--paper-spring) both; }
+.cover-art { animation: sticker-land .49s var(--paper-spring) both; }
+@keyframes cover-open { from { opacity: .5; translate: 0 13px; scale: .98; } }
+@keyframes sticker-land {
+  0% { opacity: 0; scale: .72; rotate: 11deg; translate: 0 15px; }
+  75% { opacity: 1; scale: 1.06; rotate: -4deg; }
+}
+.card-face { rotate: var(--swipe-tilt, 0deg); transition: transform .2s var(--paper-spring), rotate .2s var(--paper-spring); }
+.card.swiping .card-face { transition: none; }
+.card.swiping .card-trash svg { scale: var(--trash-scale, .75); }
+.card-trash svg { transition: scale .16s var(--paper-spring); }
+.card.placeholder { animation: slot-mark .25s ease-out both; }
+@keyframes slot-mark { from { outline-color: transparent; background-color: #fff3; } }
+.drag-proxy .card-face { animation: card-lift .18s var(--paper-spring) both; }
+@keyframes card-lift { from { transform: rotate(0) scale(1); box-shadow: 2px 3px var(--ink); } }
+.card-check span { transition: background-color .18s ease, scale .17s var(--paper-spring); }
+.card-check:active span { scale: .82; }
+.tab[data-view="done"] { position: relative; }
+.tab[data-view="done"]::after {
+  content: "✦"; position: absolute; top: -9px; right: 7px; color: #5926ac; opacity: 0; pointer-events: none;
+}
+.tab.receiving::after { animation: folder-star .52s ease-out both; }
+.folder-flap { transform-origin: 50% 75%; fill: #fff9ed; }
+.tab.receiving .folder-flap { animation: folder-open .49s ease-in-out both; }
+@keyframes folder-open {
+  45%, 70% { transform: translateY(2px) skewX(-14deg) scaleY(.65); fill: #ffb8df; }
+}
+@keyframes folder-star {
+  0%, 48% { opacity: 0; scale: .3; translate: 0 6px; }
+  68% { opacity: 1; scale: 1.35; }
+  100% { opacity: 0; translate: 0 -11px; rotate: 30deg; }
+}
+.motion-ghost {
+  position: fixed; z-index: 8; display: block; margin: 0; pointer-events: none;
+  transform: none; translate: none; rotate: none; scale: none; transition: none;
+}
+.motion-ghost.card-face { display: flex; }
+.motion-ghost.idea-ticket { overflow: hidden; }
+dialog {
+  --closed-x: 0px;
+  --closed-y: min(14vh, 90px);
+  --closed-turn: -3deg;
+  transform-origin: 50% 84%;
+  opacity: 0;
+  translate: var(--closed-x) var(--closed-y);
+  scale: .89;
+  rotate: var(--closed-turn);
+  transition: opacity .18s ease, translate .25s var(--paper-spring), scale .25s var(--paper-spring),
+    rotate .25s var(--paper-spring), display .25s, overlay .25s;
+  transition-behavior: allow-discrete;
+}
+dialog[open] { opacity: 1; translate: none; scale: none; rotate: none; }
+dialog:not([open]) { pointer-events: none; }
+#appearance { --closed-x: min(12vw, 65px); --closed-y: 10px; --closed-turn: 4deg; }
+dialog::backdrop {
+  background-color: #23173b00;
+  transition: background-color .2s ease, display .25s, overlay .25s;
+  transition-behavior: allow-discrete;
+}
+dialog[open]::backdrop { background-color: #23173b80; }
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    translate: var(--closed-x) var(--closed-y);
+    scale: .89;
+    rotate: var(--closed-turn);
+  }
+  dialog[open]::backdrop { background-color: #23173b00; }
+}
+.toast, .update { opacity: 1; translate: none; }
+.toast[hidden], .update[hidden] { opacity: 0; translate: 0 9px; }
+.toast, .update {
+  transition: opacity .16s ease, translate .2s var(--paper-spring), display .2s;
+  transition-behavior: allow-discrete;
+}
+@starting-style {
+  .toast:not([hidden]), .update:not([hidden]) { opacity: 0; translate: 0 9px; }
+}
+.reel-viewport { position: relative; overflow: hidden; }
+.reel-film { position: absolute; inset: 0; pointer-events: none; }
+.reel-film span { display: block; min-height: 100%; }
+.machine { transform-origin: 50% 80%; }
+.ticket-slot {
+  height: 7px; width: 80%; margin: 0 auto -4px; position: relative;
+  border-radius: 0 0 6px 6px; background: #342252;
+}
+.ticket-slot + .idea-ticket { margin-top: 1px; transform-origin: top center; }
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled), .card-check:active span { scale: none; transform: none; }
+  .card-face, .card.swiping .card-trash svg { rotate: none; scale: none; }
+  .cover, .cover-art, .drag-proxy .card-face, .card.placeholder,
+  .tab.receiving::after, .tab.receiving .folder-flap,
+  .cards.dragging .card:not(.placeholder) .card-face { animation: none; }
+  dialog, dialog[open], .toast[hidden], .update[hidden] { translate: none; scale: none; rotate: none; }
+  dialog, dialog::backdrop, .toast, .update { transition-duration: 90ms !important; }
+  @starting-style {
+    dialog[open], .toast:not([hidden]), .update:not([hidden]) { translate: none; scale: none; rotate: none; }
+  }
+}

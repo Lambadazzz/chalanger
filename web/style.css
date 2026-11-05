@@ -64,8 +64,6 @@ h1 span { color: #ffe470; text-shadow: 1px 1px var(--ink), -1px -1px var(--ink),
 .card[data-done="true"] .card-check span { background: var(--lime); }
 .card-trash { position: absolute; inset: 0 0 0 auto; width: 66px; padding: 0; border: 0; border-radius: inherit; background: none; }
 .card.swiping .card-face { transition: none; }
-.card.celebrating .card-face { animation: stamp .25s ease both; }
-@keyframes stamp { 40% { transform: scale(1.035) rotate(-1deg); } }
 .card.placeholder { background: #fff8; outline: 2px dashed #59467c; outline-offset: -3px; }
 .card.placeholder .card-face { visibility: hidden; }
 .card.drag-proxy { position: fixed; z-index: 8; pointer-events: none; margin: 0; will-change: top; }

@@ -1,4 +1,5 @@
 import { modes, rollIdea, themes, ticketText } from './idea-bank.js';
+import { animate, bounce, flyTo, reducedMotion, snapshot } from './motion.js';
 
 const favorite = ['sims', 'winx', 'cats', 'horror', 'autumn', 'winter', 'pop'];
 const slotNames = ['Герой или предмет', 'Поворот', 'Деталь'];
@@ -25,7 +26,6 @@ export function setupGenerator(editor, textarea) {
   const customInput = get('#custom-topic');
   const ticket = get('#idea-ticket');
   const spinButton = get('#spin-idea');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let mode = 'story';
   let selected = [];
   let topic = '';
@@ -73,7 +73,8 @@ export function setupGenerator(editor, textarea) {
   const reels = slotNames.map((name, index) => {
     const reel = document.createElement('div');
     reel.className = 'reel';
-    reel.innerHTML = '<div class="reel-content"><div class="reel-label"></div><div class="reel-value"></div></div>' +
+    reel.innerHTML = '<div class="reel-content"><div class="reel-label"></div>' +
+      '<div class="reel-viewport"><div class="reel-value"></div></div></div>' +
       '<div class="reel-controls"><button type="button" class="pin">' + icon('pin') +
       '</button><button type="button" class="reroll">' + icon('reroll') + '</button></div>';
     get('#idea-reels').append(reel);
@@ -113,38 +114,53 @@ export function setupGenerator(editor, textarea) {
     spinButton.disabled = pinned.every(Boolean);
   }
 
-  function animate(node, frames, options) {
-    if (!node.animate) return;
-    for (const animation of node.getAnimations()) animation.cancel();
-    if (!reducedMotion.matches) node.animate(frames, options);
+  function rollReel(value, label, delay, animated) {
+    const viewport = value.parentElement;
+    viewport.querySelector('.reel-film')?.remove();
+    const previous = value.textContent;
+    value.textContent = label;
+    if (!animated || reducedMotion.matches) return 0;
+    const film = document.createElement('div');
+    film.className = 'reel-film';
+    film.setAttribute('aria-hidden', 'true');
+    for (const text of [previous || label, '✦  ✦  ✦']) {
+      const frame = document.createElement('span');
+      frame.textContent = text;
+      film.append(frame);
+    }
+    viewport.append(film);
+    const run = animate(film, [
+      { transform: 'translateY(0)' },
+      { transform: 'translateY(-105%)', offset: .72 },
+      { transform: 'translateY(-205%)' }
+    ], { duration: 170, delay, easing: 'ease-in', fill: 'both' });
+    if (run) run.finished.catch(() => {}).then(() => film.remove());
+    else film.remove();
+    animate(value, [
+      { transform: 'translateY(95%)', opacity: 0 },
+      { transform: 'translateY(-8%)', opacity: 1, offset: .7 },
+      { transform: 'translateY(0)', opacity: 1 }
+    ], { duration: 155, delay: delay + 135, easing: 'cubic-bezier(.15,.75,.3,1)', fill: 'backwards' });
+    return delay + 240;
   }
 
   function spin(slots = pinned.flatMap((locked, index) => locked ? [] : [index]), animated = true) {
     if (!slots.length) return;
     pieces = rollIdea({ mode, selected, topic, current: pieces, slots });
-    let delay = 0;
-    for (const index of slots) {
-      const { value } = reels[index];
-      value.textContent = pieces[index].label;
-      if (animated) {
-        animate(value, [
-          { transform: 'translateY(-125%) scaleY(.8)', opacity: .08 },
-          { transform: 'translateY(12%)' },
-          { transform: 'translateY(0)' }
-        ], { duration: 245, delay, easing: 'cubic-bezier(.16,.82,.3,1)', fill: 'backwards' });
-        delay += 72;
-      }
-    }
+    let finish = 0;
+    slots.forEach((index, order) => {
+      finish = rollReel(reels[index].value, pieces[index].label, order * 69, animated);
+    });
     caption.textContent = selected.length
       ? 'Наклейки: ' + selected.map(themeName).join(' + ')
       : 'Выпало: ' + themeName(pieces[0].theme);
     ticket.textContent = ticketText(pieces);
     if (animated) {
       animate(ticket.parentElement, [
-        { transform: 'translateY(-9px) rotate(-1.5deg)', opacity: .35 },
-        { transform: 'translateY(3px) rotate(.6deg)' },
-        { transform: 'translateY(0)' }
-      ], { duration: 260, delay, easing: 'ease-out', fill: 'backwards' });
+        { transform: 'translateY(-13px) scaleY(.92)', clipPath: 'inset(0 0 91% 0)', opacity: .45 },
+        { transform: 'translateY(4px) rotate(.6deg)', clipPath: 'inset(0 0 0 0)', opacity: 1, offset: .78 },
+        { transform: 'none', clipPath: 'inset(0 0 0 0)', opacity: 1 }
+      ], { duration: 260, delay: finish, easing: 'ease-out', fill: 'backwards' });
     }
     updateControls();
   }
@@ -185,6 +201,7 @@ export function setupGenerator(editor, textarea) {
     get('#editor-title').textContent = 'Генератор';
     if (!pieces) spin(undefined, false);
     editor.scrollTop = 0;
+    bounce(get('.machine'));
     modeButtons.get(mode).focus({ preventScroll: true });
   });
   get('#leave-generator').addEventListener('click', () => showEditor(open));
@@ -199,9 +216,13 @@ export function setupGenerator(editor, textarea) {
     const text = ticketText(pieces);
     if (textarea.value.trim() && textarea.value !== text &&
         !confirm('Заменить текущий текст идеей из генератора?')) return;
+    const ghost = snapshot(ticket.parentElement);
     textarea.value = text;
     textarea.dispatchEvent(new Event('input'));
     showEditor(textarea);
+    flyTo(ghost, textarea, editor, 310);
+    animate(textarea, [{ backgroundColor: '#fff0bd' }, { backgroundColor: '#fff' }],
+      { duration: 275, delay: ghost ? 160 : 0, fill: 'backwards' });
   });
   editor.addEventListener('cancel', event => {
     if (panel.hidden) return;

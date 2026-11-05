@@ -1,3 +1,5 @@
+import { animate, cardPositions, reducedMotion, slideCards } from './motion.js';
+
 const xOf = point => point.clientX;
 const yOf = point => point.clientY;
 
@@ -56,7 +58,11 @@ export function bindGestures(list, actions) {
     if (next !== before) {
       const box = state.row.getBoundingClientRect();
       // Keep the slot steady while the floating card's center is inside it.
-      if (center < box.top || center > box.bottom) list.insertBefore(state.row, before);
+      if (center < box.top || center > box.bottom) {
+        const positions = reducedMotion.matches ? null : cardPositions(list);
+        list.insertBefore(state.row, before);
+        if (positions) slideCards(list, positions);
+      }
     }
     state.frame = requestAnimationFrame(() => moveDrag(state));
   }
@@ -84,6 +90,9 @@ export function bindGestures(list, actions) {
       const limit = state.row.clientWidth * .68;
       state.distance = Math.max(-limit, Math.min(0, dx - (state.opened ? 66 : 0)));
       state.row.style.setProperty('--swipe', state.distance + 'px');
+      const progress = -state.distance / limit;
+      state.row.style.setProperty('--swipe-tilt', -progress * 5 + 'deg');
+      state.row.style.setProperty('--trash-scale', .74 + progress * .5);
       state.row.querySelector('.card-trash').hidden = false;
     }
   }
@@ -105,13 +114,21 @@ export function bindGestures(list, actions) {
       return;
     }
     cancelAnimationFrame(state.frame);
+    const floatTop = state.proxy.getBoundingClientRect().top;
     state.proxy.remove();
     state.row.classList.remove('placeholder');
     list.classList.remove('dragging');
     if (cancelled) {
+      const positions = reducedMotion.matches ? null : cardPositions(list);
       list.append(...state.startOrder);
+      if (positions) slideCards(list, positions);
       return;
     }
+    const landingOffset = floatTop - state.row.getBoundingClientRect().top;
+    animate(state.row.querySelector('.card-face'), [
+      { translate: '0 ' + landingOffset + 'px', rotate: '-3deg', scale: '1.025' },
+      { translate: 'none', rotate: 'none', scale: 'none' }
+    ], { duration: 180, easing: 'cubic-bezier(.2,.76,.3,1.18)' });
     const order = [...list.children];
     if (order.some((row, index) => row !== state.startOrder[index])) {
       actions.reorder(order.map(row => row.dataset.id));
@@ -152,4 +169,5 @@ export function bindGestures(list, actions) {
       event.stopImmediatePropagation();
     }
   }, true);
+  return () => end(true);
 }
