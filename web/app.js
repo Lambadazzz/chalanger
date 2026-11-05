@@ -1,5 +1,6 @@
 import { colors, patterns, decodeBackup, reorder, toggleCard, openAlbum, loadAlbum, saveAlbum } from './album.js';
 import { bindGestures } from './gestures.js';
+import { setupGenerator } from './generator.js';
 
 const get = selector => document.querySelector(selector);
 const list = get('#cards');
@@ -10,6 +11,7 @@ const appearance = get('#appearance');
 const toast = get('#toast');
 const undoButton = toast.querySelector('button');
 const textarea = editorForm.elements.idea;
+const generator = setupGenerator(editor, textarea);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const suggestions = ['Луна из клубничного желе', 'Кот в цветочном киоске', 'Медуза в кедах'];
 let album;
@@ -164,6 +166,7 @@ function openEditor(card, suggestion = '') {
   editingId = card?.id;
   get('#editor-title').textContent = card ? 'Редактировать идею' : 'Новая идея';
   get('#delete-card').hidden = !card;
+  generator.prepare(!card);
   textarea.value = card?.text ?? suggestion;
   textarea.setCustomValidity('');
   buildStyle('card-style', 'Фон этой карточки', card?.style, album.cardStyle);
@@ -261,6 +264,7 @@ get('#appearance-form').addEventListener('submit', event => {
 textarea.addEventListener('input', () => textarea.setCustomValidity(''));
 editorForm.addEventListener('submit', event => {
   event.preventDefault();
+  if (generator.isOpen()) return;
   const text = textarea.value.trim();
   if (!text) {
     textarea.setCustomValidity('Добавь текст идеи.');
