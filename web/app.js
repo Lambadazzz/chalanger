@@ -31,6 +31,11 @@ let backupBusy = false;
 let reminderEnabled = false;
 let reminderSavedTime = '19:00';
 const helpDialog = get('#help-dialog');
+function rememberWelcome() {
+  try { localStorage.setItem('chalanger-welcome-v2', '1'); } catch { /* Preferences may be disabled. */ }
+}
+helpDialog.addEventListener('close', rememberWelcome);
+helpDialog.addEventListener('cancel', rememberWelcome);
 textarea.maxLength = MAX_IDEA_LENGTH;
 
 function canReorder() { return !query.trim() && !favorites; }
@@ -349,7 +354,11 @@ document.querySelectorAll('[data-view]').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.view));
 });
 document.querySelectorAll('[data-close]').forEach(button => {
-  button.addEventListener('click', () => button.closest('dialog').close());
+  button.addEventListener('click', () => {
+    const dialog = button.closest('dialog');
+    if (dialog === helpDialog) rememberWelcome();
+    dialog.close();
+  });
 });
 get('#palette').addEventListener('click', async () => {
   if (!album || saving) return;
@@ -541,6 +550,7 @@ get('#reminder-time').addEventListener('change', () => {
 handleAndroidBack(() => {
   const dialog = [helpDialog, appearance, editor].find(item => item.open);
   if (dialog) {
+    if (dialog === helpDialog) rememberWelcome();
     const event = new Event('cancel', { cancelable: true });
     if (dialog.dispatchEvent(event)) dialog.close();
     return true;
@@ -580,7 +590,6 @@ try {
   try {
     if (!localStorage.getItem('chalanger-welcome-v2')) {
       helpDialog.showModal();
-      helpDialog.addEventListener('close', () => localStorage.setItem('chalanger-welcome-v2', '1'), { once: true });
     }
   } catch { /* The album remains usable when browser preferences are unavailable. */ }
 } catch {
