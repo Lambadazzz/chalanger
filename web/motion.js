@@ -72,7 +72,11 @@ export function snapshot(node) {
   const box = node.getBoundingClientRect();
   if (!box.width || box.bottom <= 0 || box.top >= innerHeight) return;
   const copy = node.cloneNode(true);
-  if (node.classList.contains('card-face')) copy.style.gridTemplateColumns = getComputedStyle(node).gridTemplateColumns;
+  if (node.classList.contains('card-face')) {
+    copy.style.gridTemplateColumns = getComputedStyle(node).gridTemplateColumns;
+    const actions = node.querySelector('.card-actions');
+    if (actions) copy.querySelector('.card-actions').style.gridColumn = getComputedStyle(actions).gridColumn;
+  }
   for (const child of [copy, ...copy.querySelectorAll('[id], [aria-live]')]) {
     child.removeAttribute('id');
     child.removeAttribute('aria-live');
