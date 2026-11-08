@@ -8,6 +8,9 @@ android/local.properties
 android/**/build/
 *.jks
 *.keystore
+*.p12
+*.pem
+*signing-settings*.json
 keystore.properties
 .env
 artifacts/
