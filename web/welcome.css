@@ -1,0 +1,28 @@
+#help-dialog { padding: 14px; }
+#help-dialog .dialog-head h2 { font-size: 1.15rem; }
+.welcome-hero { position: relative; isolation: isolate; overflow: hidden; padding: 17px 12px 19px; margin-top: 6px; border: 1.5px solid var(--ink); border-radius: 18px 18px 25px 12px; background: var(--dots), #dbccff; }
+.welcome-label { position: relative; z-index: 1; display: inline-block; font-size: .56rem; letter-spacing: .12em; font-weight: 900; background: #fff6d9; padding: 4px 6px; border: 1px solid var(--ink); border-radius: 5px; rotate: -3deg; }
+.welcome-hero h3 { position: relative; z-index: 1; margin: 14px 0 7px; font-size: clamp(1.9rem, 7.5vw, 2.5rem); line-height: 1; letter-spacing: -.06em; }
+.welcome-hero p { position: relative; z-index: 1; margin: 0; font-size: .77rem; line-height: 1.4; font-weight: 650; }
+.welcome-buddy { position: absolute; width: 44%; max-width: 160px; right: -3px; bottom: 5px; rotate: 8deg; transform-origin: 50% 85%; }
+#help-dialog[open] .welcome-buddy { animation: hello-buddy .9s var(--paper-spring) both; }
+.welcome-steps { display: grid; gap: 8px; margin-block: 15px; }
+.welcome-step { display: flex; align-items: center; gap: 9px; padding: 7px 0; }
+.welcome-step:nth-child(2) { flex-direction: row-reverse; }
+.welcome-step > svg { width: 76px; height: 72px; flex: none; rotate: -6deg; }
+.welcome-step:nth-child(2) > svg { rotate: 6deg; }
+.welcome-step > div { flex: 1; min-width: 0; }
+.step-number { display: block; font-size: .59rem; text-transform: uppercase; letter-spacing: .12em; color: #72509c; font-weight: 900; }
+.welcome-step h3 { margin: 3px 0; font-size: 1rem; line-height: 1.18; letter-spacing: -.025em; }
+.welcome-step p { margin: 0; font-size: .77rem; line-height: 1.4; color: #63516f; }
+.welcome-pocket { display: flex; align-items: center; gap: 9px; padding: 10px; background: #ffe5f2; border-radius: 13px; }
+.welcome-pocket > span { font-size: 1.8rem; color: #8b386f; }
+.welcome-pocket p { margin: 0; font-size: .72rem; line-height: 1.45; }
+.welcome-start { margin: 13px 0 18px; }
+.welcome-start button { width: 100%; min-height: 48px; border-radius: 14px; font-size: 1rem; }
+.welcome-fineprint details { padding-block: 8px; }
+.welcome-fineprint summary { font-size: .77rem; min-height: 28px; }
+.welcome-fineprint details p, .welcome-support { font-size: .75rem; line-height: 1.55; }
+.welcome-support { color: #63516f; text-align: center; margin-bottom: 0; }
+@keyframes hello-buddy { 0% { translate: 20px 25px; rotate: 24deg; scale: .6; opacity: 0; } 55% { translate: 0 -5px; rotate: -8deg; scale: 1.07; opacity: 1; } 80% { rotate: 12deg; } 100% { rotate: 8deg; } }
+@media (prefers-reduced-motion: reduce) { #help-dialog[open] .welcome-buddy { animation: none; } }

@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="generator.css">
   <link rel="stylesheet" href="motion.css">
+  <link rel="stylesheet" href="welcome.css">
+  <link rel="stylesheet" href="reminder.css">
   <script type="module" src="app.js"></script>
 </head>
 <body data-paper="lilac" data-pattern="dots">
@@ -121,23 +123,50 @@
       <input type="file" id="backup-file" accept=".json,application/json" hidden>
       <p class="small-copy">Копия переносит альбом из сайта в Android. Восстановление заменит текущий альбом. Файлы новой версии могут не открываться в старой.</p>
     </section>
-    <section class="backup" id="reminders" hidden>
-      <h3>Время порисовать</h3>
-      <label class="field">Ежедневное напоминание<input id="reminder-time" type="time" value="19:00"></label>
-      <div><button id="save-reminder" type="button">Включить</button><button id="cancel-reminder" type="button">Выключить</button></div>
-      <p id="reminder-status" class="small-copy" role="status">Напоминание выключено.</p>
-      <p class="small-copy">Android может доставить напоминание позже для экономии батареи.</p>
+    <section class="reminder-card" id="reminders" hidden data-enabled="false">
+      <div class="reminder-heading">
+        <div class="reminder-mascot" aria-hidden="true"><span>✦</span><i>· ·</i><b>⌣</b></div>
+        <div class="reminder-copy"><h3>Искорка по расписанию</h3><p>Маленький повод взять карандаш.</p></div>
+        <button id="reminder-toggle" class="reminder-switch" type="button" role="switch" aria-checked="false" aria-label="Напоминать порисовать"><span class="switch-knob"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.7 5.7 3.3 8.3 9 9-5.7.7-8.3 3.3-9 9-.7-5.7-3.3-8.3-9-9 5.7-.7 8.3-3.3 9-9Z"/></svg></span></button>
+      </div>
+      <label class="reminder-clock" for="reminder-time"><span>Встретимся в</span><input id="reminder-time" type="time" value="19:00" aria-label="Время напоминания"></label>
+      <p id="reminder-status" class="small-copy" role="status">Искорка пока дремлет.</p>
+      <p class="reminder-footnote">Каждый раз — новое доброе послание. Иногда Android чуть задерживает доставку.</p>
     </section>
     <section class="backup"><button id="help" type="button">Помощь и о приложении</button></section>
   </dialog>
   <dialog id="help-dialog" aria-labelledby="help-title">
-    <div class="dialog-head"><h2 id="help-title">Твой альбом идей</h2><button class="icon-button" type="button" data-close aria-label="Закрыть">×</button></div>
+    <div class="dialog-head"><h2 id="help-title">Привет, творец!</h2><button class="icon-button" type="button" data-close aria-label="Закрыть">×</button></div>
     <div class="help-copy">
-      <p>Запиши, что хочется нарисовать, или открой «Генератор» в новой карточке. Смешивай две темы и закрепляй понравившиеся части задания булавками.</p>
-      <p>Галочка отправит идею в «Готово». Звёздочка добавит её в избранное. Зажми карточку для перемещения или смахни влево для удаления. Поиск работает в текущем разделе.</p>
-      <p>Альбом хранится на этом устройстве. При удалении приложения или очистке его данных записи могут быть потеряны. Сохраняй JSON-копию через «Палитра → Резервная копия».</p>
-      <p>Из сайта в Android альбом переносится через этот же файл. Даты старых карточек неизвестны и не восстанавливаются автоматически.</p>
-      <p>Чаланжер · версия 0.1.0<br>Разработчик: Руслан Н.<br><a href="mailto:nyshev00@gmail.com">nyshev00@gmail.com</a></p>
+      <section class="welcome-hero">
+        <span class="welcome-label">КАРМАННАЯ МАСТЕРСКАЯ</span>
+        <h3>Ну что,<br>поколдуем?</h3><p>Большие чудеса<br>начинаются с каракулей.</p>
+        <svg class="welcome-buddy" viewBox="0 0 150 150" aria-hidden="true">
+          <path d="M75 13 92 45 129 42 114 76 134 104 98 111 77 139 58 109 24 106 36 75 20 44 57 44Z" fill="#e7ff72" stroke="#23173b" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M56 72q5-10 10 0m17 0q5-10 10 0m-25 12q8 13 16 0" fill="none" stroke="#23173b" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="53" cy="82" rx="8" ry="4" fill="#ff91cd"/><ellipse cx="98" cy="82" rx="8" ry="4" fill="#ff91cd"/>
+          <path d="m109 114 17-46 10 4-17 46-9 9Z" fill="#ff91cd" stroke="#23173b" stroke-width="2.5"/><path d="m110 117 9 1-9 9Z" fill="#fff5d7" stroke="#23173b" stroke-width="2"/>
+          <path d="m13 16 3 7 8 1-7 4-1 8-4-7-8-1 7-4Z" fill="#ff91cd" stroke="#23173b" stroke-width="2"/>
+        </svg>
+      </section>
+      <div class="welcome-steps">
+        <section class="welcome-step">
+          <svg viewBox="0 0 100 88" aria-hidden="true"><path d="M17 20 72 14 81 69 26 77Z" fill="#b4e6ff" stroke="#23173b" stroke-width="2.5"/><path d="m31 38 27-4m-25 14 31-4m-29 14 15-2" stroke="#685091" stroke-width="3" stroke-linecap="round"/><path d="m62 49 15-35 9 4-15 35-10 7Z" fill="#ff91cd" stroke="#23173b" stroke-width="2.5"/><path d="m61 60 10-7-9-4Z" fill="#fff6d9" stroke="#23173b" stroke-width="2"/><path d="m14 8 3 6 7 1-6 3-1 7-3-6-7-1 6-3Z" fill="#e7ff72" stroke="#23173b" stroke-width="2"/></svg>
+          <div><span class="step-number">01 · поймай</span><h3>А что, если… кот на Луне?</h3><p>Запиши идею, пока не улетела.</p></div>
+        </section>
+        <section class="welcome-step">
+          <svg viewBox="0 0 100 88" aria-hidden="true"><path d="M15 20h70v51H15Z" fill="#dbccff" stroke="#23173b" stroke-width="2.5"/><rect x="23" y="29" width="54" height="23" rx="4" fill="#fff6d9" stroke="#23173b" stroke-width="2"/><path d="m36 32 3 6 7 1-6 3-1 7-3-6-7-1 6-3Z" fill="#ff91cd" stroke="#23173b" stroke-width="1.5"/><path d="m62 33 3 6 7 1-6 3-1 7-3-6-7-1 6-3Z" fill="#e7ff72" stroke="#23173b" stroke-width="1.5"/><path d="M30 71v8h40v-8m15-32 8-7v-9" stroke="#23173b" stroke-width="3" fill="none"/><circle cx="93" cy="19" r="6" fill="#ff91cd" stroke="#23173b" stroke-width="2"/><rect x="34" y="58" width="32" height="6" rx="3" fill="#e7ff72" stroke="#23173b" stroke-width="1.5"/></svg>
+          <div><span class="step-number">02 · смешай</span><h3>Муза спряталась? Покрутим!</h3><p>Две темы, щепотка случайности — и искра.</p></div>
+        </section>
+        <section class="welcome-step">
+          <svg viewBox="0 0 100 88" aria-hidden="true"><path d="M13 29V18h29l9 9h36v47H13Z" fill="#ffa9d9" stroke="#23173b" stroke-width="2.5"/><path d="m13 39 73-8-7 43H20Z" fill="#fff0bd" stroke="#23173b" stroke-width="2.5"/><path d="m39 52 9 9 16-20" fill="none" stroke="#6526d5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="m72 6 3 6 7 1-6 3-1 7-3-6-7-1 6-3Z" fill="#e7ff72" stroke="#23173b" stroke-width="2"/></svg>
+          <div><span class="step-number">03 · сотвори</span><h3>Один штрих — уже начало.</h3><p>Готово? Галочка — и в коллекцию маленьких побед.</p></div>
+        </section>
+      </div>
+      <div class="welcome-pocket"><span aria-hidden="true">♡</span><p>Твои идеи живут на этом телефоне.<br>Сохраняй копию — пусть ни одна не потеряется.</p></div>
+      <div class="dialog-actions welcome-start"><button class="primary" type="button" data-close>Начать рисовать <span aria-hidden="true">✦</span></button></div>
+      <div class="welcome-fineprint">
+      <details><summary>Маленькие подсказки</summary><p>Новая идея → «Генератор»: выбирай две темы и закрепляй любимые части булавками. Звезда сохраняет избранное, галочка отправляет в «Готово». Зажми карточку для перемещения или смахни влево для удаления.</p><p>Копия: «Палитра → Резервная копия». Через JSON можно перенести альбом из сайта в Android. При удалении приложения или очистке данных альбом теряется. Даты старых записей остаются неизвестными.</p></details>
       <details><summary>Конфиденциальность</summary>
         <p>Версия от 8 ноября 2026 года. Карточки, оформление, отметки и даты хранятся локально. Приложение не содержит рекламы, аналитики, регистрации или облачной синхронизации и не отправляет альбом разработчику.</p>
         <p>При экспорте ты выбираешь место хранения файла. При отправке идеи или файла через другие приложения действуют их правила обработки данных. Android-напоминания работают локально и требуют разрешения на уведомления.</p>
@@ -149,7 +178,8 @@
         <p>Сохраняй резервные копии: автоматическая облачная синхронизация не предусмотрена. Используй приложение и материалы с соблюдением закона и прав третьих лиц. Для вопросов и сообщений об ошибках: nyshev00@gmail.com.</p>
       </details>
       <details id="library-licenses"><summary>Лицензии библиотек</summary><p>В приложении используются Capacitor (MIT), AndroidX и компоненты Apache Cordova (Apache-2.0).</p><pre id="license-text" class="small-copy">Открой этот раздел, чтобы прочитать лицензии.</pre></details>
-      <div class="dialog-actions"><button class="primary" type="button" data-close>Начать рисовать</button></div>
+      <p class="welcome-support">Чаланжер · версия 0.2.0 · Руслан Н.<br><a href="mailto:nyshev00@gmail.com">nyshev00@gmail.com</a></p>
+      </div>
     </div>
   </dialog>
   <div id="toast" class="toast" hidden><span role="status"></span><button type="button" hidden>Отменить</button></div>

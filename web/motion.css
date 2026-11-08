@@ -26,6 +26,12 @@ button:active:not(:disabled) { scale: .94; }
 .tab.receiving::after { animation: folder-star .52s ease-out both; }
 .folder-flap { transform-origin: 50% 75%; fill: #fff9ed; }
 .tab.receiving .folder-flap { animation: folder-open .49s ease-in-out both; }
+.tab[data-view="ideas"] { position: relative; }
+.tab[data-view="ideas"]::after { content: '✧'; position: absolute; top: -10px; left: 19px; opacity: 0; color: #6526d5; pointer-events: none; }
+.tab[data-view="ideas"].receiving > svg { animation: idea-spark .65s var(--paper-spring); transform-origin: center; }
+.tab[data-view="ideas"].receiving::after { animation: idea-twinkle .7s ease-out; }
+@keyframes idea-spark { 0% { scale: .65; rotate: -35deg; } 45% { scale: 1.4; rotate: 45deg; } 75% { scale: .9; rotate: -10deg; } 100% { scale: 1; rotate: 0deg; } }
+@keyframes idea-twinkle { 10% { opacity: 0; translate: 0 9px; scale: .2; } 45% { opacity: 1; scale: 1.3; } 100% { opacity: 0; translate: -10px -12px; rotate: 40deg; } }
 @keyframes folder-open {
   45%, 70% { transform: translateY(2px) skewX(-14deg) scaleY(.65); fill: #ffb8df; }
 }
@@ -38,7 +44,7 @@ button:active:not(:disabled) { scale: .94; }
   position: fixed; z-index: 8; display: block; margin: 0; pointer-events: none;
   transform: none; translate: none; rotate: none; scale: none; transition: none;
 }
-.motion-ghost.card-face { display: flex; }
+.motion-ghost.card-face { display: grid; }
 .motion-ghost.idea-ticket { overflow: hidden; }
 dialog {
   --closed-x: 0px;
@@ -94,6 +100,7 @@ dialog[open]::backdrop { background-color: #23173b80; }
   .card-face, .card.swiping .card-trash svg { rotate: none; scale: none; }
   .cover, .cover-art, .drag-proxy .card-face, .card.placeholder,
   .tab.receiving::after, .tab.receiving .folder-flap,
+  .tab[data-view="ideas"].receiving > svg, .tab[data-view="ideas"].receiving::after,
   .cards.dragging .card:not(.placeholder) .card-face { animation: none; }
   dialog, dialog[open], .toast[hidden], .update[hidden] { translate: none; scale: none; rotate: none; }
   dialog, dialog::backdrop, .toast, .update { transition-duration: 90ms !important; }

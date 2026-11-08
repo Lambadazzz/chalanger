@@ -5,6 +5,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 export const native = Capacitor.isNativePlatform();
 const Backup = registerPlugin('AlbumBackup');
+const DrawingReminder = registerPlugin('DrawingReminder');
 
 export async function exportAlbum(contents) {
   const filename = 'chalanger-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -35,6 +36,7 @@ export async function shareIdea(text) {
 export async function setReminder(time) {
   if (!native) throw new Error('Напоминания доступны в Android-приложении.');
   if (!time) {
+    await DrawingReminder.set({ time: '' });
     await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
     return;
   }
@@ -44,19 +46,20 @@ export async function setReminder(time) {
   if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
     throw new Error('Выбери время напоминания.');
   }
-  await LocalNotifications.createChannel({ id: 'drawing', name: 'Время порисовать', importance: 3 });
-  await LocalNotifications.schedule({ notifications: [{
-    id: 1, title: 'Время порисовать ✦', body: 'В альбоме ждут идеи. Даже маленький набросок — уже начало.',
-    channelId: 'drawing', isExactNotification: false,
-    schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: false }
-  }] });
+  await DrawingReminder.set({ time });
+  // Remove the fixed-phrase reminder from 0.1 after its replacement is saved.
+  await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
 }
 
 export async function reminderTime() {
   if (!native) return '';
+  const state = await DrawingReminder.get();
+  if (state.configured) return state.time;
   const { notifications } = await LocalNotifications.getPending();
   const schedule = notifications.find(item => item.id === 1)?.schedule?.on;
-  return schedule ? String(schedule.hour).padStart(2, '0') + ':' + String(schedule.minute).padStart(2, '0') : '';
+  const time = schedule ? String(schedule.hour).padStart(2, '0') + ':' + String(schedule.minute).padStart(2, '0') : '';
+  if (time && state.allowed) await setReminder(time);
+  return time;
 }
 
 export function handleAndroidBack(onBack) {

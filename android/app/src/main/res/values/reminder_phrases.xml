@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="drawing_reminder_phrases">
+        <item>Пора творить чудеса! ✦</item>
+        <item>Муза уже заварила тебе чай ☕</item>
+        <item>Твой карандаш соскучился ♡</item>
+        <item>А что, если сегодня нарисовать мечту?</item>
+        <item>Маленький набросок, большое волшебство ✨</item>
+        <item>Идеи стучатся. Откроем? ✧</item>
+        <item>Пять минут для твоего внутреннего художника</item>
+        <item>Лови искорку — она сегодня твоя! ✦</item>
+        <item>Чистый лист верит в тебя ♡</item>
+        <item>Давай добавим этому дню немного цвета!</item>
+    </string-array>
+</resources>

@@ -1,5 +1,5 @@
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-#editor:has(#generator-panel:not([hidden])) { max-height: min(94dvh, 820px); }
+#editor:has(#generator-panel:not([hidden])) { max-height: min(78dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 48px), 680px); }
 .generator-open, .generator-back {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   min-height: 44px; padding: 0 11px; border: 1.5px solid var(--ink); border-radius: 13px;
@@ -34,8 +34,8 @@
 .theme-chip { min-height: 34px; padding-inline: 6px; border-radius: 13px 9px 12px 8px; background: #fff5dd; font-size: .73rem; }
 #favorite-themes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 #favorite-themes .theme-chip { padding-inline: 2px; line-height: 1.12; }
-.theme-chip[data-theme="sims"], .theme-chip[data-theme="nature"] { background: #e7ff9a; }
-.theme-chip[data-theme="winx"], .theme-chip[data-theme="pop"], .theme-chip[data-theme="custom"] { background: var(--pink); }
+.theme-chip[data-theme="life"], .theme-chip[data-theme="nature"] { background: #e7ff9a; }
+.theme-chip[data-theme="fairyschool"], .theme-chip[data-theme="pop"], .theme-chip[data-theme="custom"] { background: var(--pink); }
 .theme-chip[data-theme="winter"], .theme-chip[data-theme="sea"] { background: var(--sky); }
 .theme-chip[data-theme="autumn"], .theme-chip[data-theme="summer"] { background: var(--peach); }
 .theme-chip[aria-pressed="true"] { color: #fff9ed; background: #332155; box-shadow: 1px 2px #fff9ed; }
@@ -93,4 +93,4 @@
   padding-bottom: 5px; font-weight: 900; font-size: .66rem; letter-spacing: .09em;
 }
 .idea-ticket p { margin: 6px 0 0; line-height: 1.36; font-size: .88rem; font-weight: 750; }
-.generator-actions { margin-top: 9px; }
+.generator-actions { position: sticky; bottom: -1px; padding: 8px 0 4px; margin-top: 6px; background: #fff9ed; z-index: 2; }

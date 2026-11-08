@@ -1,0 +1,27 @@
+.reminder-card { margin-top: 18px; padding: 12px; border: 1.5px solid #9e8db4; border-radius: 18px; background: #f1eaff; transition: background .3s ease, border-color .3s ease; }
+.reminder-heading { display: flex; align-items: center; gap: 9px; }
+.reminder-copy { min-width: 0; flex: 1; }
+.reminder-copy h3 { margin: 0; font-size: .9rem; line-height: 1.2; }
+.reminder-copy p { margin: 4px 0 0; font-size: .7rem; color: #63516f; line-height: 1.4; }
+.reminder-mascot { position: relative; flex: none; width: 41px; height: 48px; color: #b9a7ce; transition: color .3s; }
+.reminder-mascot > span { display: block; font-size: 3.5rem; line-height: .9; }
+.reminder-mascot i, .reminder-mascot b { position: absolute; color: #55416f; font-style: normal; font-size: .8rem; }
+.reminder-mascot i { top: 13px; left: 12px; letter-spacing: 3px; }
+.reminder-mascot b { top: 19px; left: 17px; }
+.reminder-switch { position: relative; flex: none; width: 58px; height: 36px; padding: 3px; border: 1.5px solid var(--ink); border-radius: 24px; background: #c7bad8; box-shadow: 1px 2px var(--ink); }
+.switch-knob { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--ink); border-radius: 50%; background: #fff9ed; translate: 0; transition: translate .3s var(--paper-spring), rotate .4s var(--paper-spring); }
+.switch-knob svg { width: 17px; height: 17px; fill: #b5a5c6; stroke: #5d4378; stroke-width: 1.2; }
+.reminder-switch[aria-checked="true"] { background: #e7ff72; }
+.reminder-switch[aria-checked="true"] .switch-knob { translate: 23px 0; rotate: 90deg; }
+.reminder-switch[aria-checked="true"] svg { fill: #ff91cd; stroke: #23173b; }
+.reminder-card[data-enabled="true"] { background: #fff3d8; border-color: #806935; }
+.reminder-card[data-enabled="true"] .reminder-mascot { color: #ffd979; }
+.reminder-clock { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; font-size: .8rem; font-weight: 750; }
+.reminder-clock input[type="time"] { width: 118px; min-height: 40px; background: #fff9ed; font-weight: 850; font-size: 1.1rem; text-align: center; }
+.reminder-card .small-copy { margin: 9px 0 0; font-size: .73rem; }
+.reminder-footnote { margin: 6px 0 0; font-size: .64rem; color: #756386; line-height: 1.45; }
+.reminder-card.waking .reminder-mascot { animation: spark-wakes .75s var(--paper-spring); }
+.reminder-card.waking .switch-knob svg { animation: spark-celebrates .6s ease-out; }
+@keyframes spark-wakes { 0% { scale: .65; rotate: -20deg; } 40% { scale: 1.25; rotate: 15deg; translate: 0 -5px; } 70% { rotate: -8deg; } 100% { scale: 1; rotate: 0; translate: 0; } }
+@keyframes spark-celebrates { 50% { scale: 1.6; rotate: 150deg; } }
+@media (prefers-reduced-motion: reduce) { .reminder-card.waking .reminder-mascot, .reminder-card.waking .switch-knob svg { animation: none; } .switch-knob { transition: none; } }

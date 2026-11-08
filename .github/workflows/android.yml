@@ -73,10 +73,14 @@ jobs:
           arch: x86_64
           disable-animations: true
           working-directory: android
-          script: ./gradlew :app:connectedDebugAndroidTest
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest
+            adb pull /sdcard/Android/data/ru.lambadazzz.chalanger/files/artifacts ../artifacts/android
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: android-device-test-results
-          path: android/app/build/reports/androidTests/
+          path: |
+            android/app/build/reports/androidTests/
+            artifacts/android/
           if-no-files-found: ignore

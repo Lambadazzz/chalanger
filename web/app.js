@@ -1,6 +1,7 @@
 import { colors, patterns, decodeBackup, encodeBackup, MAX_BACKUP_BYTES, MAX_IDEA_LENGTH, visibleCards, reorder, toggleCard, openAlbum, loadAlbum, saveAlbum } from './album.js';
 import { native, exportAlbum, importAlbum, shareIdea, setReminder, reminderTime, handleAndroidBack } from './platform.js';
 import { bindGestures } from './gestures.js';
+import { fitCards, watchCardWidth } from './card-layout.js';
 import { setupGenerator } from './generator.js';
 import { animate, bindButtonMotion, bounce, cardPositions, flyTo, playGhost, reducedMotion, slideCards, snapshot } from './motion.js';
 
@@ -27,6 +28,8 @@ let saving = false;
 let query = '';
 let favorites = false;
 let backupBusy = false;
+let reminderEnabled = false;
+let reminderSavedTime = '19:00';
 const helpDialog = get('#help-dialog');
 textarea.maxLength = MAX_IDEA_LENGTH;
 
@@ -112,6 +115,7 @@ function render({ enterId, all = false, slide = false } = {}) {
     button.setAttribute('aria-pressed', String(button.dataset.view === view));
   });
   list.replaceChildren(...active.map(makeCard));
+  fitCards(list);
   if (positions) slideCards(list, positions);
   let entrance = 0;
   if (!reducedMotion.matches && (all || enterId)) {
@@ -309,11 +313,7 @@ async function markCard(card, row, button) {
     { transform: 'none', opacity: 1 },
     { transform: 'translateY(-10px) scale(.91) rotate(-3deg)', opacity: 0 }
   ], { duration: 220, easing: 'ease-in', fill: 'both' });
-  if (!card.done && !reducedMotion.matches) {
-    tab.classList.remove('receiving');
-    void tab.offsetWidth;
-    tab.classList.add('receiving');
-  }
+  celebrateTab(tab);
   notify(card.done ? 'Снова в идеях' : 'В папке «Готово» ✦');
 }
 
@@ -325,6 +325,15 @@ function saveOrder(ids, keepRows = false) {
     return saved;
   });
 }
+
+function celebrateTab(tab) {
+  if (reducedMotion.matches) return;
+  tab.classList.remove('receiving');
+  void tab.offsetWidth;
+  tab.classList.add('receiving');
+}
+
+watchCardWidth(list);
 
 get('#add').addEventListener('click', () => openEditor());
 get('#search').addEventListener('input', event => {
@@ -348,11 +357,12 @@ get('#palette').addEventListener('click', async () => {
   buildStyle('default-style', 'Фон карточек по умолчанию', album.cardStyle);
   appearance.showModal();
   if (native) {
+    setReminderBusy(true);
     try {
       const time = await reminderTime();
-      if (time) get('#reminder-time').value = time;
-      get('#reminder-status').textContent = time ? 'Ежедневно в ' + time : 'Напоминание выключено.';
+      showReminderState(time);
     } catch { get('#reminder-status').textContent = 'Не удалось проверить напоминание.'; }
+    finally { setReminderBusy(false); }
   }
 });
 get('#appearance-form').addEventListener('submit', event => {
@@ -381,6 +391,7 @@ editorForm.addEventListener('submit', event => {
         view = 'ideas'; query = ''; favorites = false;
         get('#search').value = '';
         get('#favorites').setAttribute('aria-pressed', 'false');
+        celebrateTab(get('[data-view="ideas"]'));
       }
       editor.close();
     },
@@ -494,18 +505,39 @@ get('#library-licenses').addEventListener('toggle', async event => {
   } catch { get('#license-text').textContent = 'Не удалось открыть лицензии. Обратись в поддержку: nyshev00@gmail.com'; }
 });
 get('#reminders').hidden = !native;
-for (const id of ['save-reminder', 'cancel-reminder']) {
-  get('#' + id).addEventListener('click', async () => {
-    const time = id === 'save-reminder' ? get('#reminder-time').value : '';
-    if (id === 'save-reminder' && !time) { alert('Выбери время.'); return; }
-    get('#save-reminder').disabled = get('#cancel-reminder').disabled = true;
-    try {
-      await setReminder(time);
-      get('#reminder-status').textContent = time ? 'Ежедневно в ' + time : 'Напоминание выключено.';
-    } catch (error) { alert(error.message); }
-    finally { get('#save-reminder').disabled = get('#cancel-reminder').disabled = false; }
-  });
+function setReminderBusy(busy) {
+  get('#reminder-toggle').disabled = get('#reminder-time').disabled = busy;
+  get('#reminders').setAttribute('aria-busy', String(busy));
 }
+function showReminderState(time, celebrate = false) {
+  reminderEnabled = !!time;
+  if (time) get('#reminder-time').value = reminderSavedTime = time;
+  get('#reminder-toggle').setAttribute('aria-checked', String(reminderEnabled));
+  get('#reminders').dataset.enabled = String(reminderEnabled);
+  get('#reminder-status').textContent = time ? 'Каждый день в ' + time + ' · ждём маленькое чудо ♡' : 'Искорка пока дремлет.';
+  if (celebrate && !reducedMotion.matches) {
+    get('#reminders').classList.remove('waking');
+    void get('#reminders').offsetWidth;
+    get('#reminders').classList.add('waking');
+  }
+}
+async function saveReminder(time) {
+  if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) { alert('Выбери время.'); return; }
+  const wasEnabled = reminderEnabled;
+  setReminderBusy(true);
+  get('#reminder-status').textContent = 'Договариваемся с музой…';
+  try {
+    await setReminder(time);
+    showReminderState(time, !!time && !wasEnabled);
+  } catch (error) {
+    showReminderState(wasEnabled ? reminderSavedTime : '');
+    get('#reminder-status').textContent = error.message;
+  } finally { setReminderBusy(false); }
+}
+get('#reminder-toggle').addEventListener('click', () => void saveReminder(reminderEnabled ? '' : get('#reminder-time').value));
+get('#reminder-time').addEventListener('change', () => {
+  if (reminderEnabled) void saveReminder(get('#reminder-time').value);
+});
 handleAndroidBack(() => {
   const dialog = [helpDialog, appearance, editor].find(item => item.open);
   if (dialog) {
@@ -546,9 +578,9 @@ try {
   get('#add').disabled = false;
   render({ all: true });
   try {
-    if (!localStorage.getItem('chalanger-welcome')) {
+    if (!localStorage.getItem('chalanger-welcome-v2')) {
       helpDialog.showModal();
-      helpDialog.addEventListener('close', () => localStorage.setItem('chalanger-welcome', '1'), { once: true });
+      helpDialog.addEventListener('close', () => localStorage.setItem('chalanger-welcome-v2', '1'), { once: true });
     }
   } catch { /* The album remains usable when browser preferences are unavailable. */ }
 } catch {
