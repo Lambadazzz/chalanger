@@ -4,6 +4,12 @@ import { createHash } from 'node:crypto';
 
 await build();
 await cp('web/icons', 'dist/icons', { recursive: true });
+const notices = [await readFile('licenses/NOTICE.txt', 'utf8')];
+for (const name of ['core', 'android', 'app', 'share', 'local-notifications']) {
+  notices.push('@capacitor/' + name + '\n\n' + await readFile('node_modules/@capacitor/' + name + '/LICENSE', 'utf8'));
+}
+notices.push(await readFile('licenses/Apache-2.0.txt', 'utf8'));
+await writeFile('dist/third-party.txt', notices.join('\n\n--------------------\n\n'));
 async function filesIn(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   return (await Promise.all(entries.map(entry => entry.isDirectory()

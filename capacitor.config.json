@@ -4,5 +4,5 @@
   "webDir": "dist",
   "server": { "errorPath": "unsupported.html" },
   "android": { "allowMixedContent": false, "minWebViewVersion": 105 },
-  "plugins": { "LocalNotifications": { "iconColor": "#6526D5" } }
+  "plugins": { "LocalNotifications": { "smallIcon": "ic_notification", "iconColor": "#6526D5" } }
 }

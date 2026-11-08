@@ -1,0 +1,10 @@
+Chalanger uses Capacitor and official Capacitor plugins (MIT, Drifty Co.).
+Android builds also use AndroidX and Apache Cordova components (Apache-2.0).
+AndroidX: Copyright The Android Open Source Project.
+Apache Cordova: Copyright The Apache Software Foundation.
+No changes to third-party library source code are included in this project.
+
+The complete MIT notices of the installed Capacitor packages and the
+Apache License 2.0 are included in third-party.txt in the built app.
+
+This notice does not select an open-source license for Chalanger itself.

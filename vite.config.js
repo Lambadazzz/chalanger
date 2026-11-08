@@ -4,5 +4,5 @@ export default defineConfig({
   root: 'web',
   base: './',
   publicDir: 'public',
-  build: { outDir: '../dist', emptyOutDir: true }
+  build: { outDir: '../dist', emptyOutDir: true, target: 'chrome105' }
 });

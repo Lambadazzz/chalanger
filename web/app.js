@@ -77,7 +77,10 @@ function makeCard(card, index) {
   }
   const favorite = control('icon-button card-favorite', 'favorite', 'Избранное', card.favorite ? '★' : '☆');
   favorite.setAttribute('aria-pressed', String(card.favorite));
-  face.append(check, copy, favorite, control('icon-button', 'edit', 'Редактировать идею', icon('dots')));
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  actions.append(favorite, control('icon-button', 'edit', 'Редактировать идею', icon('dots')));
+  face.append(check, copy, actions);
   const trash = control('card-trash', 'delete', 'Удалить идею', icon('trash'));
   trash.hidden = true;
   row.append(trash, face);
@@ -481,6 +484,15 @@ get('#share-card').addEventListener('click', async () => {
   }
 });
 get('#help').addEventListener('click', () => helpDialog.showModal());
+get('#library-licenses').addEventListener('toggle', async event => {
+  if (!event.target.open || get('#license-text').dataset.loaded) return;
+  try {
+    const response = await fetch('./third-party.txt');
+    if (!response.ok) throw new Error('Unavailable');
+    get('#license-text').textContent = await response.text();
+    get('#license-text').dataset.loaded = 'true';
+  } catch { get('#license-text').textContent = 'Не удалось открыть лицензии. Обратись в поддержку: nyshev00@gmail.com'; }
+});
 get('#reminders').hidden = !native;
 for (const id of ['save-reminder', 'cancel-reminder']) {
   get('#' + id).addEventListener('click', async () => {

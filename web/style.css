@@ -57,9 +57,11 @@ h1 span { color: #ffe470; text-shadow: 1px 1px var(--ink), -1px -1px var(--ink),
 .card { position: relative; border-radius: 17px; background: #ff85a5; isolation: isolate; }
 .card-face { position: relative; display: flex; align-items: center; gap: 10px; min-height: 73px; padding: 12px 8px 12px 12px; border: 1.6px solid var(--ink); border-radius: 16px 15px 17px 12px; box-shadow: 2px 3px var(--ink); background: var(--pattern, none), var(--surface); transform: translateX(var(--swipe, 0px)); transition: transform .17s ease; touch-action: pan-y; user-select: none; }
 .card-face p { flex: 1; min-width: 0; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1rem; font-weight: 750; }
-.card-copy { flex: 1; min-width: 0; }
+.card-face { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: start; }
+.card-copy { min-width: 0; padding-top: 6px; }
+.card-actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 4px; }
 .card-copy small { display: block; margin-top: 7px; color: #524369; font-size: .72rem; }
-.card-favorite { width: 36px; font-size: 1.5rem; }
+.card-favorite { width: 44px; font-size: 1.5rem; }
 .card-favorite[aria-pressed="true"] { color: #682bc3; }
 .filters { display: flex; gap: 8px; margin-bottom: 18px; align-items: center; }
 .search { flex: 1; min-width: 0; }
@@ -71,6 +73,7 @@ h1 span { color: #ffe470; text-shadow: 1px 1px var(--ink), -1px -1px var(--ink),
 .help-copy a { color: #6526d5; overflow-wrap: anywhere; }
 .help-copy details { border-top: 1px dashed #ad9dbb; padding-block: 12px; }
 .help-copy summary { cursor: pointer; font-weight: 800; min-height: 32px; }
+.help-copy pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .dialog-actions { flex-wrap: wrap; }
 @media (max-width: 360px) { .filters { flex-wrap: wrap; } .search { flex-basis: 100%; } .card-face { gap: 3px; padding-left: 5px; } }
 .card-check, .icon-button { display: grid; place-items: center; flex: none; width: 44px; height: 44px; background: none; border: 0; border-radius: 12px; padding: 0; }
