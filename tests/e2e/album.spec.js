@@ -88,5 +88,7 @@ test('offline reload retains album and generator on a narrow screen', async ({ p
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
   await expect(page.locator('.card')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+    .map(animation => animation.finished.catch(() => {}))));
   await page.screenshot({ path: 'artifacts/album-mobile.png', fullPage: true });
 });
