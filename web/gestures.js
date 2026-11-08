@@ -18,7 +18,7 @@ export function bindGestures(list, actions) {
       opened: actions.isOpen(row), mode: 'pending'
     };
     gesture = state;
-    if (list.children.length > 1) state.timer = setTimeout(() => startDrag(state), 370);
+    if (list.children.length > 1 && actions.canReorder()) state.timer = setTimeout(() => startDrag(state), 370);
   }
 
   function startDrag(state) {

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#eee6ff">
   <meta name="description" content="Личный альбом идей для рисования">
-  <title>Chalanger — альбом идей</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <title>Чаланжер — альбом идей</title>
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
@@ -32,7 +32,7 @@
     <header class="cover">
       <div class="cover-copy">
         <div class="eyebrow"><span>✦</span> ЛИЧНЫЙ АЛЬБОМ</div>
-        <h1>Chalanger<span>.</span></h1>
+        <h1>Чаланжер<span>.</span></h1>
         <p>Что хочется порисовать?</p>
       </div>
       <svg class="cover-art" viewBox="0 0 170 135" aria-hidden="true">
@@ -50,6 +50,10 @@
       </div>
       <button type="button" class="palette-button" id="palette" aria-label="Палитра" title="Палитра"><svg><use href="#palette-icon"/></svg></button>
     </nav>
+    <section class="filters" aria-label="Поиск и фильтры">
+      <label class="search"><span class="sr-only">Поиск по идеям</span><input id="search" type="search" maxlength="1000" placeholder="Найти идею…"></label>
+      <button id="favorites" class="filter-button" type="button" aria-pressed="false">☆ Избранное</button>
+    </section>
     <section id="update" class="update" hidden><span>Доступна новая версия</span><button type="button" id="apply-update">Обновить</button></section>
     <section class="board" aria-label="Карточки альбома">
       <div class="board-label"><span id="board-title">НАБРОСКИ</span><span id="board-hint">Зажми карточку, чтобы переместить</span></div>
@@ -62,10 +66,11 @@
     <form id="editor-form">
       <div class="dialog-head"><h2 id="editor-title">Новая идея</h2><button class="icon-button" type="button" data-close aria-label="Закрыть"><svg><use href="#close"/></svg></button></div>
       <div id="editor-fields">
-        <label class="field">Что рисуем?<textarea name="idea" rows="3" maxlength="240" required placeholder="Например, луна из клубничного желе"></textarea></label>
+        <label class="field">Что рисуем?<textarea name="idea" rows="3" maxlength="1000" required placeholder="Например, луна из клубничного желе"></textarea></label>
         <fieldset id="card-style"></fieldset>
         <div class="dialog-actions">
           <button type="button" class="delete-action" id="delete-card" hidden>Удалить</button>
+          <button type="button" class="text-button" id="share-card" hidden>Поделиться</button>
           <button type="button" class="generator-open" id="open-generator" aria-controls="generator-panel"><svg aria-hidden="true"><use href="#spark"/></svg> Генератор</button>
           <button type="submit" class="primary">Сохранить</button>
         </div>
@@ -114,7 +119,37 @@
       <h3>Резервная копия</h3>
       <div><button id="export" type="button">Сохранить копию</button><button id="import" type="button">Восстановить из файла</button></div>
       <input type="file" id="backup-file" accept=".json,application/json" hidden>
+      <p class="small-copy">Копия переносит альбом из сайта в Android. Восстановление заменит текущий альбом. Файлы новой версии могут не открываться в старой.</p>
     </section>
+    <section class="backup" id="reminders" hidden>
+      <h3>Время порисовать</h3>
+      <label class="field">Ежедневное напоминание<input id="reminder-time" type="time" value="19:00"></label>
+      <div><button id="save-reminder" type="button">Включить</button><button id="cancel-reminder" type="button">Выключить</button></div>
+      <p id="reminder-status" class="small-copy" role="status">Напоминание выключено.</p>
+      <p class="small-copy">Android может доставить напоминание позже для экономии батареи.</p>
+    </section>
+    <section class="backup"><button id="help" type="button">Помощь и о приложении</button></section>
+  </dialog>
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <div class="dialog-head"><h2 id="help-title">Твой альбом идей</h2><button class="icon-button" type="button" data-close aria-label="Закрыть">×</button></div>
+    <div class="help-copy">
+      <p>Запиши, что хочется нарисовать, или открой «Генератор» в новой карточке. Смешивай две темы и закрепляй понравившиеся части задания булавками.</p>
+      <p>Галочка отправит идею в «Готово». Звёздочка добавит её в избранное. Зажми карточку для перемещения или смахни влево для удаления. Поиск работает в текущем разделе.</p>
+      <p>Альбом хранится на этом устройстве. При удалении приложения или очистке его данных записи могут быть потеряны. Сохраняй JSON-копию через «Палитра → Резервная копия».</p>
+      <p>Из сайта в Android альбом переносится через этот же файл. Даты старых карточек неизвестны и не восстанавливаются автоматически.</p>
+      <p>Чаланжер · версия 0.1.0<br>Разработчик: Руслан Н.<br><a href="mailto:nyshev00@gmail.com">nyshev00@gmail.com</a></p>
+      <details><summary>Конфиденциальность</summary>
+        <p>Версия от 8 ноября 2026 года. Карточки, оформление, отметки и даты хранятся локально. Приложение не содержит рекламы, аналитики, регистрации или облачной синхронизации и не отправляет альбом разработчику.</p>
+        <p>При экспорте ты выбираешь место хранения файла. При отправке идеи или файла через другие приложения действуют их правила обработки данных. Android-напоминания работают локально и требуют разрешения на уведомления.</p>
+        <p>Для удаления данных используй настройки приложения Android; для веб-версии — очистку данных сайта. Экспортированные копии удаляются отдельно. При обращении по email разработчик получает сведения, которые ты отправишь; не прикладывай личные записи без необходимости.</p>
+        <p>По вопросам обработки данных и удаления переписки: Руслан Н., <a href="mailto:nyshev00@gmail.com">nyshev00@gmail.com</a>.</p>
+      </details>
+      <details><summary>Условия использования</summary>
+        <p>Чаланжер — бесплатный личный альбом идей для рисования. Задания служат творческими подсказками. Права на собственные тексты и рисунки остаются у их авторов.</p>
+        <p>Сохраняй резервные копии: автоматическая облачная синхронизация не предусмотрена. Используй приложение и материалы с соблюдением закона и прав третьих лиц. Для вопросов и сообщений об ошибках: nyshev00@gmail.com.</p>
+      </details>
+      <div class="dialog-actions"><button class="primary" type="button" data-close>Начать рисовать</button></div>
+    </div>
   </dialog>
   <div id="toast" class="toast" hidden><span role="status"></span><button type="button" hidden>Отменить</button></div>
   <div id="confetti" aria-hidden="true"></div>

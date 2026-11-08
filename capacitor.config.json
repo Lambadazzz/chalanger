@@ -1,0 +1,8 @@
+{
+  "appId": "ru.lambadazzz.chalanger",
+  "appName": "Чаланжер",
+  "webDir": "dist",
+  "server": { "errorPath": "unsupported.html" },
+  "android": { "allowMixedContent": false, "minWebViewVersion": 105 },
+  "plugins": { "LocalNotifications": { "iconColor": "#6526D5" } }
+}

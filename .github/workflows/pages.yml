@@ -22,10 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Version offline cache
-        run: sed -i "s/__CHALANGER_BUILD__/${GITHUB_SHA}/g" web/sw.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: dist
       - uses: actions/deploy-pages@v4
         id: deployment

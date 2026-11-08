@@ -1,4 +1,5 @@
-import { colors, patterns, decodeBackup, reorder, toggleCard, openAlbum, loadAlbum, saveAlbum } from './album.js';
+import { colors, patterns, decodeBackup, encodeBackup, MAX_BACKUP_BYTES, MAX_IDEA_LENGTH, visibleCards, reorder, toggleCard, openAlbum, loadAlbum, saveAlbum } from './album.js';
+import { native, exportAlbum, importAlbum, shareIdea, setReminder, reminderTime, handleAndroidBack } from './platform.js';
 import { bindGestures } from './gestures.js';
 import { setupGenerator } from './generator.js';
 import { animate, bindButtonMotion, bounce, cardPositions, flyTo, playGhost, reducedMotion, slideCards, snapshot } from './motion.js';
@@ -23,6 +24,17 @@ let revealed;
 let undo;
 let toastTimer;
 let saving = false;
+let query = '';
+let favorites = false;
+let backupBusy = false;
+const helpDialog = get('#help-dialog');
+textarea.maxLength = MAX_IDEA_LENGTH;
+
+function canReorder() { return !query.trim() && !favorites; }
+
+function formatDate(value) {
+  return value ? new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value)) : '';
+}
 
 function icon(name) {
   return '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
@@ -54,7 +66,18 @@ function makeCard(card, index) {
     '<span>' + (card.done ? icon('check') : '') + '</span>');
   const text = document.createElement('p');
   text.textContent = card.text;
-  face.append(check, text, control('icon-button', 'edit', 'Редактировать идею', icon('dots')));
+  const copy = document.createElement('div');
+  copy.className = 'card-copy';
+  copy.append(text);
+  const date = card.done ? card.completedAt : card.createdAt;
+  if (date) {
+    const caption = document.createElement('small');
+    caption.textContent = (card.done ? 'Готово ' : 'Создано ') + formatDate(date);
+    copy.append(caption);
+  }
+  const favorite = control('icon-button card-favorite', 'favorite', 'Избранное', card.favorite ? '★' : '☆');
+  favorite.setAttribute('aria-pressed', String(card.favorite));
+  face.append(check, copy, favorite, control('icon-button', 'edit', 'Редактировать идею', icon('dots')));
   const trash = control('card-trash', 'delete', 'Удалить идею', icon('trash'));
   trash.hidden = true;
   row.append(trash, face);
@@ -74,14 +97,14 @@ function render({ enterId, all = false, slide = false } = {}) {
   const positions = slide && !reducedMotion.matches ? cardPositions(list) : null;
   revealed = undefined;
   const done = view === 'done';
-  const active = album.cards.filter(card => card.done === done);
+  const active = visibleCards(album.cards, { done, query, favorites });
   const doneCount = album.cards.filter(card => card.done).length;
   document.body.dataset.paper = album.paper.color;
   document.body.dataset.pattern = album.paper.pattern;
   updateCount('#ideas-count', album.cards.length - doneCount);
   updateCount('#done-count', doneCount);
   get('#board-title').textContent = done ? 'ПАПКА ГОТОВОГО' : 'НАБРОСКИ';
-  get('#board-hint').hidden = active.length < 2;
+  get('#board-hint').hidden = active.length < 2 || !canReorder();
   document.querySelectorAll('[data-view]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.view === view));
   });
@@ -97,6 +120,16 @@ function render({ enterId, all = false, slide = false } = {}) {
   }
   empty.hidden = active.length > 0;
   if (empty.hidden) return;
+  if (query.trim() || favorites) {
+    empty.innerHTML = '<h2>Пока ничего не нашлось</h2><p>Попробуй другой запрос или отключи фильтр избранного.</p><button class="primary" type="button">Сбросить фильтры</button>';
+    empty.querySelector('button').addEventListener('click', () => {
+      query = ''; favorites = false;
+      get('#search').value = '';
+      get('#favorites').setAttribute('aria-pressed', 'false');
+      render();
+    });
+    return;
+  }
   empty.innerHTML = done
     ? '<div class="empty-sticker" aria-hidden="true">✓</div><h2>Здесь будет готовое</h2><p>Поставь галочку рядом с идеей, и она переедет в эту папку.</p>'
     : '<div class="empty-sticker" aria-hidden="true">✿</div><h2>Чистый лист!</h2><p>Запиши свою идею или начни с одной из этих подсказок.</p><div class="suggestions"></div>';
@@ -191,6 +224,7 @@ function openEditor(card, suggestion = '') {
   editingId = card?.id;
   get('#editor-title').textContent = card ? 'Редактировать идею' : 'Новая идея';
   get('#delete-card').hidden = !card;
+  get('#share-card').hidden = !card;
   generator.prepare(!card);
   textarea.value = card?.text ?? suggestion;
   textarea.setCustomValidity('');
@@ -281,6 +315,7 @@ async function markCard(card, row, button) {
 }
 
 function saveOrder(ids, keepRows = false) {
+  if (!canReorder()) return Promise.resolve(false);
   const cards = reorder(album.cards, view === 'done', ids);
   return commit({ ...album, cards }, { keepRows, slide: !keepRows }).then(saved => {
     if (!saved) render();
@@ -289,17 +324,33 @@ function saveOrder(ids, keepRows = false) {
 }
 
 get('#add').addEventListener('click', () => openEditor());
+get('#search').addEventListener('input', event => {
+  query = event.target.value;
+  if (album) render();
+});
+get('#favorites').addEventListener('click', () => {
+  favorites = !favorites;
+  get('#favorites').setAttribute('aria-pressed', String(favorites));
+  if (album) render();
+});
 document.querySelectorAll('[data-view]').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.view));
 });
 document.querySelectorAll('[data-close]').forEach(button => {
   button.addEventListener('click', () => button.closest('dialog').close());
 });
-get('#palette').addEventListener('click', () => {
+get('#palette').addEventListener('click', async () => {
   if (!album || saving) return;
   buildStyle('paper-style', 'Фон альбома', album.paper);
   buildStyle('default-style', 'Фон карточек по умолчанию', album.cardStyle);
   appearance.showModal();
+  if (native) {
+    try {
+      const time = await reminderTime();
+      if (time) get('#reminder-time').value = time;
+      get('#reminder-status').textContent = time ? 'Ежедневно в ' + time : 'Напоминание выключено.';
+    } catch { get('#reminder-status').textContent = 'Не удалось проверить напоминание.'; }
+  }
 });
 get('#appearance-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -311,8 +362,8 @@ editorForm.addEventListener('submit', event => {
   event.preventDefault();
   if (generator.isOpen()) return;
   const text = textarea.value.trim();
-  if (!text) {
-    textarea.setCustomValidity('Добавь текст идеи.');
+  if (!text || text.length > MAX_IDEA_LENGTH) {
+    textarea.setCustomValidity(!text ? 'Добавь текст идеи.' : 'Идея слишком длинная. Максимум — ' + MAX_IDEA_LENGTH + ' символов.');
     textarea.reportValidity();
     return;
   }
@@ -320,10 +371,14 @@ editorForm.addEventListener('submit', event => {
   const id = editingId ?? crypto.randomUUID();
   const cards = editingId
     ? album.cards.map(card => card.id === editingId ? { ...card, text, style } : card)
-    : [{ id, text, style, done: false }, ...album.cards];
+    : [{ id, text, style, done: false, favorite: false, createdAt: new Date().toISOString(), completedAt: null }, ...album.cards];
   void commit({ ...album, cards }, {
     onSaved: () => {
-      if (!editingId) view = 'ideas';
+      if (!editingId) {
+        view = 'ideas'; query = ''; favorites = false;
+        get('#search').value = '';
+        get('#favorites').setAttribute('aria-pressed', 'false');
+      }
       editor.close();
     },
     enterId: id, slide: !editingId
@@ -348,9 +403,12 @@ list.addEventListener('click', event => {
   if (button.dataset.action === 'toggle') void markCard(card, row, button);
   if (button.dataset.action === 'edit') openEditor(card);
   if (button.dataset.action === 'delete') void removeCard(card.id);
+  if (button.dataset.action === 'favorite') {
+    void commit({ ...album, cards: album.cards.map(item => item.id === card.id ? { ...item, favorite: !item.favorite } : item) });
+  }
 });
 list.addEventListener('keydown', async event => {
-  if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key) || saving) return;
+  if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key) || saving || !canReorder()) return;
   const row = event.target.closest('.card');
   if (!row) return;
   event.preventDefault();
@@ -364,6 +422,7 @@ list.addEventListener('keydown', async event => {
 
 const cancelGesture = bindGestures(list, {
   allowed: () => !!album && !saving,
+  canReorder,
   isOpen: row => revealed === row,
   closeOthers: row => { if (revealed && revealed !== row) reveal(revealed, false); },
   reveal,
@@ -371,33 +430,83 @@ const cancelGesture = bindGestures(list, {
   reorder: ids => { void saveOrder(ids, true); }
 });
 
-get('#export').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify({ app: 'Chalanger', version: 1, album }, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'chalanger-' + new Date().toISOString().slice(0, 10) + '.json';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+get('#export').addEventListener('click', async () => {
+  if (!album || saving || backupBusy) return;
+  backupBusy = true;
+  try {
+    const result = await exportAlbum(encodeBackup(album));
+    if (result.saved) notify(native ? 'Копия сохранена' : 'Копия передана браузеру для сохранения');
+  } catch { alert('Не удалось сохранить копию. Попробуй ещё раз.'); }
+  finally { backupBusy = false; }
 });
 const backup = get('#backup-file');
-get('#import').addEventListener('click', () => backup.click());
-backup.addEventListener('change', async () => {
-  const file = backup.files[0];
-  backup.value = '';
-  if (!file || saving) return;
+async function restoreContents(contents) {
   let next;
-  try {
-    next = decodeBackup(JSON.parse(await file.text()));
-  } catch (error) {
+  try { next = decodeBackup(JSON.parse(contents)); }
+  catch (error) {
     alert(error instanceof SyntaxError ? 'Не удалось прочитать файл копии.' : error.message);
     return;
   }
   if (!confirm('Восстановить копию? Она заменит текущие карточки и оформление.')) return;
   if (await commit(next, { onSaved: () => appearance.close() })) notify('Альбом восстановлен');
+}
+get('#import').addEventListener('click', async () => {
+  if (!album || saving || backupBusy) return;
+  if (!native) { backup.click(); return; }
+  backupBusy = true;
+  try {
+    const result = await importAlbum();
+    if (!result.cancelled) await restoreContents(result.contents);
+  } catch { alert('Не удалось открыть копию. Выбери JSON-файл Chalanger размером до 10 МБ.'); }
+  finally { backupBusy = false; }
+});
+backup.addEventListener('change', async () => {
+  const file = backup.files[0];
+  backup.value = '';
+  if (!file || saving || backupBusy) return;
+  if (file.size > MAX_BACKUP_BYTES) { alert('Копия слишком большая. Максимум — 10 МБ.'); return; }
+  backupBusy = true;
+  try {
+    await restoreContents(await file.text());
+  } catch { alert('Не удалось прочитать копию.'); }
+  finally { backupBusy = false; }
 });
 
+get('#share-card').addEventListener('click', async () => {
+  try {
+    const result = await shareIdea(textarea.value);
+    if (result?.copied) notify('Идея скопирована');
+  } catch (error) {
+    if (error.name !== 'AbortError') alert('Не удалось поделиться идеей.');
+  }
+});
+get('#help').addEventListener('click', () => helpDialog.showModal());
+get('#reminders').hidden = !native;
+for (const id of ['save-reminder', 'cancel-reminder']) {
+  get('#' + id).addEventListener('click', async () => {
+    const time = id === 'save-reminder' ? get('#reminder-time').value : '';
+    if (id === 'save-reminder' && !time) { alert('Выбери время.'); return; }
+    get('#save-reminder').disabled = get('#cancel-reminder').disabled = true;
+    try {
+      await setReminder(time);
+      get('#reminder-status').textContent = time ? 'Ежедневно в ' + time : 'Напоминание выключено.';
+    } catch (error) { alert(error.message); }
+    finally { get('#save-reminder').disabled = get('#cancel-reminder').disabled = false; }
+  });
+}
+handleAndroidBack(() => {
+  const dialog = [helpDialog, appearance, editor].find(item => item.open);
+  if (dialog) {
+    const event = new Event('cancel', { cancelable: true });
+    if (dialog.dispatchEvent(event)) dialog.close();
+    return true;
+  }
+  if (view !== 'ideas') { setView('ideas'); return true; }
+  return false;
+})?.catch(() => {});
+
 async function setupOffline() {
-  if (!('serviceWorker' in navigator)) return;
+  if (native || !import.meta.env.PROD || !('serviceWorker' in navigator)) return;
   const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
   const showUpdate = () => { get('#update').hidden = !registration.waiting; };
   let reloading = false;
@@ -421,9 +530,16 @@ async function setupOffline() {
 try {
   db = await openAlbum();
   album = await loadAlbum(db);
+  await saveAlbum(db, album);
   get('#add').disabled = false;
   render({ all: true });
+  try {
+    if (!localStorage.getItem('chalanger-welcome')) {
+      helpDialog.showModal();
+      helpDialog.addEventListener('close', () => localStorage.setItem('chalanger-welcome', '1'), { once: true });
+    }
+  } catch { /* The album remains usable when browser preferences are unavailable. */ }
 } catch {
-  notify('Локальное хранилище недоступно. Открой альбом в обычной вкладке браузера.');
+  notify('Не удалось открыть альбом. Не очищай данные приложения: сохрани имеющуюся копию и обратись в поддержку.');
 }
 setupOffline().catch(error => console.warn('Offline setup failed', error));

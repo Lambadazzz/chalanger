@@ -1,7 +1,7 @@
 import { modes, rollIdea, themes, ticketText } from './idea-bank.js';
 import { animate, bounce, flyTo, reducedMotion, snapshot } from './motion.js';
 
-const favorite = ['sims', 'winx', 'cats', 'horror', 'autumn', 'winter', 'pop'];
+const favorite = ['life', 'fairyschool', 'cats', 'horror', 'autumn', 'winter', 'pop'];
 const slotNames = ['Герой или предмет', 'Поворот', 'Деталь'];
 const twistLabels = { story: 'Поворот', redesign: 'Задача', challenge: 'Приём' };
 

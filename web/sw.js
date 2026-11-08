@@ -33,9 +33,11 @@ self.addEventListener('fetch', event => {
   if (!url.href.startsWith(self.registration.scope)) return;
   if (event.request.mode === 'navigate') {
     event.respondWith(caches.open(cacheName).then(async cache =>
-      (await cache.match('./index.html')) ?? fetch(event.request)));
+      (await cache.match(cachedUrls.has(url.href) ? event.request : './index.html', { ignoreVary: true })) ?? fetch(event.request)));
   } else if (cachedUrls.has(url.href)) {
+    // These are exact, same-origin public build assets. A server's Vary: Origin
+    // must not make module requests miss the precache created by the worker.
     event.respondWith(caches.open(cacheName).then(async cache =>
-      (await cache.match(event.request)) ?? fetch(event.request)));
+      (await cache.match(event.request, { ignoreVary: true })) ?? fetch(event.request)));
   }
 });

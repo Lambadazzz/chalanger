@@ -1,0 +1,62 @@
+# Android: разработка и выпуск
+
+## Требования
+
+Node.js 24, JDK 21, Android SDK 36. В Android Studio открыть каталог android.
+
+```sh
+npm ci
+npm test
+npm run android:sync
+cd android
+./gradlew assembleDebug assembleRelease lintDebug
+```
+
+Windows: `gradlew.bat` вместо `./gradlew`.
+CI делает те же проверки в `.github/workflows/android.yml` и сохраняет APK в артефакт `chalanger-android-test`.
+
+Имя пакета: `ru.lambadazzz.chalanger`, версия `0.1.0`, versionCode `1`. Утвердить пакет до первой публикации: изменение пакета создаёт отдельное приложение. При каждом обновлении увеличивать versionCode в android/app/build.gradle.
+
+## Данные
+
+IndexedDB сохраняется при обычном обновлении с тем же пакетом и подписью. Не менять origin Capacitor (`https://localhost`) без миграции. В браузере и Android это разные хранилища: перенос через JSON.
+
+Формат копии v2 содержит даты и избранное. v1 принимается, неизвестные даты остаются null. Текущая версия не гарантирует открытие v2 в старой веб-версии. Альбом заменяется только после полной проверки и подтверждения. Максимум файла 10 МБ, текста 1000 символов, карточек в копии 10000.
+
+Ручные JSON-копии не включают время напоминания; после переноса его настраивают отдельно. Автоматическое резервирование Android отключено. Не удалять/очищать приложение, если важный альбом ещё не экспортирован.
+
+## Подпись release
+
+Постоянный ключ и пароли не хранятся в репозитории. Для локальной сборки задать переменные окружения:
+
+```text
+ANDROID_KEYSTORE_PATH=/absolute/path/chalanger-release.jks
+ANDROID_KEYSTORE_PASSWORD=...
+ANDROID_KEY_ALIAS=...
+ANDROID_KEY_PASSWORD=...
+```
+
+Затем `npm run android:sync` и `./gradlew assembleRelease`.
+Без переменных release остаётся unsigned. Не использовать debug-ключ для магазина.
+
+Проверить подпись утилитой Android SDK:
+
+```sh
+apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+```
+
+Выпуск и хранение постоянного ключа выполняются владельцем перед публикацией. Текущий CI не получает секретов и не публикует приложение в магазин.
+
+## Проверка интерфейса
+
+```sh
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+Браузерные проверки покрывают пользовательские сценарии и PWA офлайн, но не заменяют Android-проверку системного выбора файлов, Share, кнопки Back и уведомлений.
+
+## Офлайн и веб-версия
+
+Vite собирает web в dist. build.mjs создаёт service worker со списком итоговых файлов и хешем содержимого. GitHub Pages публикует dist. В Android файлы включены в APK; service worker не запускается, обновления поступают через новый APK.

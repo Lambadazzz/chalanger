@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Чаланжер</string>
+    <string name="title_activity_main">Чаланжер</string>
+    <string name="package_name">ru.lambadazzz.chalanger</string>
+    <string name="custom_url_scheme">ru.lambadazzz.chalanger</string>
+</resources>
