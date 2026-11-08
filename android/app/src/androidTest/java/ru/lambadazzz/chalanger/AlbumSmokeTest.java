@@ -2,6 +2,7 @@ package ru.lambadazzz.chalanger;
 
 import static org.junit.Assert.*;
 import android.content.Context;
+import android.content.ContentValues;
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -9,8 +10,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
-import java.io.File;
-import java.io.FileOutputStream;
+import android.provider.MediaStore;
+import java.io.OutputStream;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -24,10 +25,16 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class AlbumSmokeTest {
     private void capture(Context context, String name) throws Exception {
-        File directory = new File(context.getExternalFilesDir(null), "artifacts");
-        assertTrue(directory.isDirectory() || directory.mkdirs());
+        if (Build.VERSION.SDK_INT < 29) return;
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ChalangerTest");
+        var uri = context.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        assertNotNull(uri);
         Bitmap bitmap = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
-        try (FileOutputStream stream = new FileOutputStream(new File(directory, name))) {
+        try (OutputStream stream = context.getContentResolver().openOutputStream(uri)) {
+            assertNotNull(stream);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
         }
         bitmap.recycle();

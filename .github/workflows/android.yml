@@ -76,7 +76,7 @@ jobs:
           script: |
             ./gradlew :app:connectedDebugAndroidTest
             mkdir -p ../artifacts/android
-            adb pull /sdcard/Android/data/ru.lambadazzz.chalanger/files/artifacts ../artifacts/android
+            adb pull /sdcard/Pictures/ChalangerTest ../artifacts/android
       - uses: actions/upload-artifact@v4
         if: always()
         with:
