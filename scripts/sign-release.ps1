@@ -12,8 +12,21 @@ if (!$taskSettings.keystore -or !$taskSettings.password -or !$taskSettings.certi
 $taskPinnedCertificate = (Get-Content -LiteralPath (Join-Path $PSScriptRoot '../android/release-certificate.sha256') -Raw).Trim()
 if ($taskSettings.certificateSha256 -ne $taskPinnedCertificate) { throw 'Signing settings do not match the permanent project certificate.' }
 if (Test-Path -LiteralPath $OutputApk) { throw 'Output APK already exists. Choose a new versioned filename.' }
-$taskBadging = (& $AaptExecutable dump badging $UnsignedApk) -join "`n"
-if ($LASTEXITCODE -ne 0) { throw 'Could not read APK manifest.' }
+# Windows aapt cannot open an absolute path containing Cyrillic. Inspect an
+# ASCII-named copy relative to its directory; Java signing still uses full paths.
+$taskSource = (Resolve-Path -LiteralPath $UnsignedApk).Path
+$taskSourceDirectory = Split-Path -Parent $taskSource
+$taskProbeName = 'chalanger-inspect-' + [guid]::NewGuid().ToString('N') + '.apk'
+$taskProbe = Join-Path $taskSourceDirectory $taskProbeName
+Copy-Item -LiteralPath $taskSource -Destination $taskProbe
+try {
+    Push-Location -LiteralPath $taskSourceDirectory
+    try {
+        $taskBadging = (& $AaptExecutable dump badging $taskProbeName) -join "`n"
+        $taskInspectionExitCode = $LASTEXITCODE
+    } finally { Pop-Location }
+} finally { Remove-Item -LiteralPath $taskProbe }
+if ($taskInspectionExitCode -ne 0) { throw 'Could not read APK manifest.' }
 $taskIdentity = [regex]::Match($taskBadging, "package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'")
 if (!$taskIdentity.Success -or $taskIdentity.Groups[1].Value -ne $taskSettings.package) { throw 'Unexpected application package.' }
 if ($taskBadging.Contains('application-debuggable')) { throw 'Refusing to sign a debuggable APK with the production key.' }
